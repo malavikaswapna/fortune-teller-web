@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer's Fortune Teller</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --secondary-color: #9370db;
+            --accent-color: #483d8b;
+            --bg-color: #1a1a2e;
+            --text-color: #f5f5f5;
+            --card-back: #2f2f4a;
+            --past-color: #4682b4;    /* Steel Blue */
+            --present-color: #9370db; /* Medium Purple */
+            --future-color: #20b2aa;  /* Light Sea Green */
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Particle container */
+        #particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        /* Content container to ensure text stays above particles */
+        .content-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        header {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            width: 100%;
+            max-width: 900px;
+            box-sizing: border-box;
+        }
+        
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+            text-shadow: 0 0 10px rgba(147, 112, 219, 0.4);
+        }
+        
+        .subtitle {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        
+        .instructions {
+            background-color: rgba(106, 90, 205, 0.2);
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 0 auto 1.5rem;
+            max-width: 90%;
+            text-align: center;
+            border: 1px solid var(--primary-color);
+            font-size: clamp(0.9rem, 1.5vw, 1rem);
+            backdrop-filter: blur(5px);
+        }
+        
+        .reading-labels {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 0.5rem;
+            font-size: clamp(0.9rem, 1.5vw, 1rem);
+            font-weight: bold;
+        }
+        
+        .reading-label {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-align: center;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .reading-label.past {
+            background-color: var(--past-color);
+        }
+        
+        .reading-label.present {
+            background-color: var(--present-color);
+        }
+        
+        .reading-label.future {
+            background-color: var(--future-color);
+        }
+        
+        .reading-label.active {
+            opacity: 1;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: clamp(10px, 2vw, 20px);
+            width: 100%;
+            max-width: 1000px;
+            padding: 0.5rem;
+            box-sizing: border-box;
+            justify-items: center;
+        }
+        
+        .card {
+            width: 100%;
+            max-width: 180px;
+            aspect-ratio: 2/3;
+            perspective: 1000px;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+        }
+        
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .card.past-card.flipped .card-inner {
+            box-shadow: 0 0 20px 5px var(--past-color);
+        }
+        
+        .card.present-card.flipped .card-inner {
+            box-shadow: 0 0 20px 5px var(--present-color);
+        }
+        
+        .card.future-card.flipped .card-inner {
+            box-shadow: 0 0 20px 5px var(--future-color);
+        }
+        
+        .card-label {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+            backdrop-filter: blur(5px);
+        }
+        
+        .card.past-card .card-label {
+            background-color: var(--past-color);
+            opacity: 1;
+        }
+        
+        .card.present-card .card-label {
+            background-color: var(--present-color);
+            opacity: 1;
+        }
+        
+        .card.future-card .card-label {
+            background-color: var(--future-color);
+            opacity: 1;
+        }
+        
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        .card-back {
+            background-color: var(--card-back);
+            background-image: linear-gradient(45deg, var(--primary-color) 25%, transparent 25%, transparent 75%, var(--primary-color) 75%, var(--primary-color)),
+                              linear-gradient(45deg, var(--primary-color) 25%, transparent 25%, transparent 75%, var(--primary-color) 75%, var(--primary-color));
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            border: 5px solid var(--secondary-color);
+            color: var(--text-color);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .card-back::after {
+            content: "?";
+            font-size: clamp(3rem, 8vw, 5rem);
+            color: var(--text-color);
+            text-shadow: 0 0 5px var(--accent-color);
+        }
+        
+        .card-front {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            transform: rotateY(180deg);
+            border: 5px solid var(--secondary-color);
+            text-align: center;
+            overflow: hidden;
+            padding: 0;
+        }
+        
+        .card.past-card .card-front {
+            background: linear-gradient(135deg, var(--past-color), #2c5282);
+            border-color: var(--past-color);
+        }
+        
+        .card.present-card .card-front {
+            background: linear-gradient(135deg, var(--present-color), #5e4a9c);
+            border-color: var(--present-color);
+        }
+        
+        .card.future-card .card-front {
+            background: linear-gradient(135deg, var(--future-color), #167571);
+            border-color: var(--future-color);
+        }
+        
+        .card-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            padding: 0.6rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        /* Custom scrollbar for card content */
+        .card-content-wrapper::-webkit-scrollbar {
+            width: 3px;
+        }
+        
+        .card-content-wrapper::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-content-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        
+        .card-title {
+            font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+            font-weight: bold;
+            margin: 0.2rem 0;
+            color: #fff;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .card-content {
+            font-size: clamp(0.65rem, 1.8vw, 0.8rem);
+            line-height: 1.2;
+            margin: 0.2rem 0;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        
+        .card-symbol {
+            font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+            margin: 0.2rem 0;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .reading-interpretation {
+            background-color: rgba(106, 90, 205, 0.2);
+            border: 1px solid var(--primary-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem auto;
+            max-width: 90%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+        
+        .reading-interpretation.visible {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+        
+        .reading-title {
+            text-align: center;
+            font-size: clamp(1.1rem, 2vw, 1.3rem);
+            margin-bottom: 0.8rem;
+            color: var(--secondary-color);
+        }
+        
+        .reading-content {
+            font-size: clamp(0.9rem, 1.5vw, 1rem);
+            line-height: 1.5;
+        }
+        
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .button {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 5px;
+            font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .button-icon {
+            font-size: 1.2rem;
+        }
+        
+        .share-options {
+            display: none;
+            position: absolute;
+            background-color: rgba(36, 36, 65, 0.95);
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 1rem;
+            z-index: 100;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .share-options.visible {
+            display: block;
+        }
+        
+        .share-option {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .share-option:hover {
+            background-color: rgba(106, 90, 205, 0.3);
+        }
+        
+        .share-icon {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .close-share {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .saved-readings {
+            display: none;
+            background-color: rgba(106, 90, 205, 0.2);
+            border: 1px solid var(--primary-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem auto;
+            max-width: 90%;
+            backdrop-filter: blur(5px);
+        }
+        
+        .saved-readings.visible {
+            display: block;
+        }
+        
+        .saved-reading-item {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.8rem 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .saved-reading-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding-left: 0.5rem;
+            border-radius: 5px;
+        }
+        
+        .saved-reading-date {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 0.3rem;
+        }
+        
+        .saved-reading-cards {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .delete-reading {
+            color: #ff6b6b;
+            background: none;
+            border: none;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: auto;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .delete-reading:hover {
+            opacity: 1;
+        }
+        
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            gap: 1rem;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        footer {
+            margin-top: auto;
+            padding: 1rem;
+            text-align: center;
+            font-size: clamp(0.7rem, 1.2vw, 0.8rem);
+            opacity: 0.7;
+            width: 100%;
+        }
+        
+        /* Tutorial overlay */
+        .tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        
+        .tutorial-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .tutorial-content {
+            background-color: rgba(36, 36, 65, 0.95);
+            border: 2px solid var(--primary-color);
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 30px rgba(106, 90, 205, 0.5);
+        }
+        
+        .tutorial-step {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .tutorial-step.active {
+            display: block;
+        }
+        
+        .tutorial-image {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 1rem auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tutorial-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+        
+        .tutorial-button {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tutorial-button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .tutorial-dots {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        .tutorial-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .tutorial-dot.active {
+            background-color: var(--secondary-color);
+            transform: scale(1.2);
+        }
+        
+        .skip-tutorial {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            color: var(--text-color);
+            border: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        
+        .skip-tutorial:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+        
+        .floating-card {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Improved responsive breakpoints */
+        @media (max-width: 900px) {
+            .card-container {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .card-content-wrapper {
+                padding: 0.5rem;
+            }
+            
+            .reading-labels {
+                flex-direction: row;
+                font-size: 0.8rem;
+            }
+            
+            .reading-label {
+                padding: 0.4rem 0.8rem;
+            }
+            
+            .button-container {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: center;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .card-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                padding: 0.5rem;
+            }
+            
+            .instructions {
+                padding: 0.8rem;
+            }
+            
+            .card-content {
+                font-size: 0.6rem;
+                line-height: 1.1;
+            }
+            
+            .card-content-wrapper {
+                padding: 0.4rem;
+            }
+            
+            .reading-labels {
+                font-size: 0.7rem;
+            }
+            
+            .reading-label {
+                padding: 0.3rem 0.6rem;
+            }
+            
+            .card-label {
+                font-size: 0.7rem;
+                padding: 0.1rem 0.3rem;
+            }
+            
+            .tutorial-content {
+                padding: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .card-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .instructions {
+                max-width: 95%;
+                margin-bottom: 1rem;
+            }
+            
+            .button {
+                padding: 0.7rem 1rem;
+            }
+            
+            .card-content {
+                font-size: 0.58rem;
+            }
+            
+            .card-title {
+                font-size: 0.8rem;
+            }
+            
+            .card-symbol {
+                font-size: 1.3rem;
+            }
+            
+            .card-content-wrapper {
+                padding: 0.35rem;
+            }
+            
+            .reading-labels {
+                font-size: 0.65rem;
+            }
+            
+            .reading-label {
+                padding: 0.2rem 0.4rem;
+            }
+            
+            .tutorial-button {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-container"></div>
+    
+    <!-- Tutorial Overlay -->
+    <div class="tutorial-overlay" id="tutorialOverlay">
+        <div class="tutorial-content">
+            <button class="skip-tutorial" id="skipTutorial">Skip Tutorial</button>
+            
+            <div class="tutorial-step active" data-step="1">
+                <h2>Welcome to Developer's Fortune Teller!</h2>
+                <p>Discover insights about your coding journey through mystical card readings.</p>
+                <div class="tutorial-image floating-card">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjI3MCIgeD0iMTAiIHk9IjE1IiBmaWxsPSIjMmYyZjRhIiBzdHJva2U9IiM5MzcwZGIiIHN0cm9rZS13aWR0aD0iNSIgcng9IjE1Ii8+PHRleHQgeD0iMTAwIiB5PSIxNTAiIGZvbnQtc2l6ZT0iODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmNWY1ZjUiPj88L3RleHQ+PC9zdmc+" alt="Fortune Card">
+                </div>
+                <p>Let the mystical code reveal your past, present, and future as a developer.</p>
+            </div>
+            
+            <div class="tutorial-step" data-step="2">
+                <h2>1. Select Three Cards</h2>
+                <p>Choose three cards to reveal your developer journey.</p>
+                <div class="tutorial-image">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB4PSIyMCIgeT0iNDAiIGZpbGw9IiMyZjJmNGEiIHN0cm9rZT0iIzkzNzBkYiIgc3Ryb2tlLXdpZHRoPSIzIiByeD0iMTAiLz48dGV4dCB4PSI2MCIgeT0iMTAwIiBmb250LXNpemU9IjQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZjVmNWY1Ij4/PC90ZXh0PjxyZWN0IHdpZHRoPSI4MCIgaGVpZ2h0PSIxMjAiIHg9IjExMCIgeT0iNDAiIGZpbGw9IiMyZjJmNGEiIHN0cm9rZT0iIzkzNzBkYiIgc3Ryb2tlLXdpZHRoPSIzIiByeD0iMTAiLz48dGV4dCB4PSIxNTAiIHk9IjEwMCIgZm9udC1zaXplPSI0MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2Y1ZjVmNSI+PzwvdGV4dD48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB4PSIyMDAiIHk9IjQwIiBmaWxsPSIjMmYyZjRhIiBzdHJva2U9IiM5MzcwZGIiIHN0cm9rZS13aWR0aD0iMyIgcng9IjEwIi8+PHRleHQgeD0iMjQwIiB5PSIxMDAiIGZvbnQtc2l6ZT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmNWY1ZjUiPj88L3RleHQ+PC9zdmc+" alt="Select Three Cards">
+                </div>
+                <p>Your first selection represents your <strong>past</strong>, second your <strong>present</strong>, and third your <strong>future</strong>.</p>
+            </div>
+            
+            <div class="tutorial-step" data-step="3">
+                <h2>2. Reveal Your Reading</h2>
+                <p>After selecting your cards, a personalized reading will appear.</p>
+                <div class="tutorial-image">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE1MCIgeD0iMTAiIHk9IjI1IiBmaWxsPSJyZ2JhKDEwNiwgOTAsIDIwNSwgMC4yKSIgc3Ryb2tlPSIjNmE1YWNkIiBzdHJva2Utd2lkdGg9IjIiIHJ4PSIxMCIvPjx0ZXh0IHg9IjE1MCIgeT0iNjAiIGZvbnQtc2l6ZT0iMTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM5MzcwZGIiPllvdXIgRGV2ZWxvcGVyIEpvdXJuZXk8L3RleHQ+PHJlY3QgeD0iMzAiIHk9IjgwIiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjYwIiBmaWxsPSJ0cmFuc3BhcmVudCIgc3Ryb2tlPSIjNzc3NzlhIiBzdHJva2Utd2lkdGg9IjEiIHJ4PSI1IiBzdHJva2UtZGFzaGFycmF5PSIzLDMiLz48dGV4dCB4PSIxNTAiIHk9IjExMCIgZm9udC1zaXplPSIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2Y1ZjVmNSI+UGVyc29uYWxpemVkIHJlYWRpbmcgYmFzZWQgb24geW91ciBjYXJkczwvdGV4dD48L3N2Zz4=" alt="Reading Interpretation">
+                </div>
+                <p>This mystical interpretation connects your past, present, and future as a developer.</p>
+                </div>
+                
+                <div class="tutorial-step" data-step="4">
+                    <h2>3. Save or Share Your Reading</h2>
+                    <p>You can save your readings to view later or share them with friends.</p>
+                    <div class="tutorial-image">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiB4PSIzMCIgeT0iODAiIGZpbGw9IiM2YTVhY2QiIHJ4PSI1Ii8+PHRleHQgeD0iOTAiIHk9IjEwNSIgZm9udC1zaXplPSIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2Y1ZjVmNSI+U2F2ZSBSZWFkaW5nPC90ZXh0PjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiIHg9IjE2MCIgeT0iODAiIGZpbGw9IiM2YTVhY2QiIHJ4PSI1Ii8+PHRleHQgeD0iMjIwIiB5PSIxMDUiIGZvbnQtc2l6ZT0iMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmNWY1ZjUiPlNoYXJlIFJlYWRpbmc8L3RleHQ+PC9zdmc+" alt="Save and Share">
+                    </div>
+                    <p>Sign in to save your readings and access them from any device!</p>
+                </div>
+                
+                <div class="tutorial-navigation">
+                    <button class="tutorial-button" id="prevButton" style="visibility: hidden;">Previous</button>
+                    <button class="tutorial-button" id="nextButton">Next</button>
+                </div>
+                
+                <div class="tutorial-dots">
+                    <div class="tutorial-dot active" data-step="1"></div>
+                    <div class="tutorial-dot" data-step="2"></div>
+                    <div class="tutorial-dot" data-step="3"></div>
+                    <div class="tutorial-dot" data-step="4"></div>
+                </div>
+                </div>
+                </div>
+                
+                <!-- Share Options Overlay -->
+                <div class="share-options" id="shareOptions">
+                    <button class="close-share" id="closeShare">✕</button>
+                    <h3>Share Your Reading</h3>
+                    
+                    <div class="share-option" id="shareFacebook">
+                        <div class="share-icon">📘</div>
+                        <div>Facebook</div>
+                    </div>
+                    
+                    <div class="share-option" id="shareTwitter">
+                        <div class="share-icon">🐦</div>
+                        <div>Twitter</div>
+                    </div>
+                    
+                    <div class="share-option" id="shareWhatsapp">
+                        <div class="share-icon">📱</div>
+                        <div>WhatsApp</div>
+                    </div>
+                    
+                    <div class="share-option" id="shareEmail">
+                        <div class="share-icon">✉️</div>
+                        <div>Email</div>
+                    </div>
+                    
+                    <div class="share-option" id="copyLink">
+                        <div class="share-icon">🔗</div>
+                        <div>Copy Link</div>
+                    </div>
+                </div>
+                
+                <div class="content-container">
+                    <header>
+                        <h1>Developer's Fortune Teller</h1>
+                        <div class="subtitle">Unveil your coding destiny</div>
+                        <div class="instructions">
+                            Select three cards to reveal insights about your past, present, and future as a developer.
+                        </div>
+                    </header>
+                    
+                    <div class="reading-labels">
+                        <div class="reading-label past" id="pastLabel">Your Past</div>
+                        <div class="reading-label present" id="presentLabel">Your Present</div>
+                        <div class="reading-label future" id="futureLabel">Your Future</div>
+                    </div>
+                    
+                    <div class="card-container" id="cardContainer"></div>
+                    
+                    <div class="reading-interpretation" id="readingInterpretation">
+                        <div class="reading-title">Your Developer Journey</div>
+                        <div class="reading-content" id="readingContent"></div>
+                    </div>
+                    
+                    <div class="button-container">
+                        <button class="button" id="resetButton">
+                            <span class="button-icon">🔄</span> Shuffle & Reset
+                        </button>
+                        <button class="button" id="saveButton">
+                            <span class="button-icon">💾</span> Save Reading
+                        </button>
+                        <button class="button" id="shareButton">
+                            <span class="button-icon">📤</span> Share Reading
+                        </button>
+                        <button class="button" id="savedReadingsButton">
+                            <span class="button-icon">📚</span> My Readings
+                        </button>
+                    </div>
+                    
+                    <div class="saved-readings" id="savedReadings">
+                        <h3>Your Saved Readings</h3>
+                        <div id="savedReadingsList"></div>
+                        <div id="loginPrompt" class="login-container">
+                            <p>Sign in to view your saved readings across devices</p>
+                            <div class="auth-buttons">
+                                <button class="button" id="signInButton">
+                                    <span class="button-icon">🔑</span> Sign In
+                                </button>
+                                <button class="button" id="signUpButton">
+                                    <span class="button-icon">👤</span> Sign Up
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <footer>
+                        <p>🔮 The mystical code knows all, debugs all 🔮</p>
+                    </footer>
+                </div>
+                
+                <script>
+                    // Firebase Configuration
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyClNYp5cxMLzaMAO2-jAlTo6PtKOp2GWXw",
+                        authDomain: "abracadabra-8b367.firebaseapp.com",
+                        projectId: "abracadabra-8b367",
+                        storageBucket: "abracadabra-8b367.firebasestorage.app",
+                        messagingSenderId: "1034379480352",
+                        appId: "1:1034379480352:web:511cb9ef33cf54bb215b45"
+                    };
+                    
+                    // Initialize Firebase
+                    firebase.initializeApp(firebaseConfig);
+                    const db = firebase.firestore();
+                    const auth = firebase.auth();
+                    
+                    // Array of fortune cards with titles, symbols, and predictions
+                    const fortuneCards = [
+                        {
+                            title: "The Algorithm",
+                            symbol: "⚙️",
+                            content: "An elegant solution will bring unexpected recognition."
+                        },
+                        {
+                            title: "The Loop",
+                            symbol: "♾️",
+                            content: "Break free from circular patterns to find innovation."
+                        },
+                        {
+                            title: "The Exception",
+                            symbol: "⚠️",
+                            content: "A surprising error will lead to your best discovery."
+                        },
+                        {
+                            title: "The Legacy Code",
+                            symbol: "📜",
+                            content: "Ancient wisdom lurks in deprecated methods."
+                        },
+                        {
+                            title: "The Deployment",
+                            symbol: "🚀",
+                            content: "Your next launch will exceed all expectations."
+                        },
+                        {
+                            title: "The Recursion",
+                            symbol: "🌀",
+                            content: "The solution is within the function itself."
+                        },
+                        {
+                            title: "The Debugger",
+                            symbol: "🔍",
+                            content: "Step by step, a hidden truth will be revealed."
+                        },
+                        {
+                            title: "The Framework",
+                            symbol: "🏗️",
+                            content: "Don't let your tools constrain your creativity."
+                        },
+                        {
+                            title: "The Callback",
+                            symbol: "📞",
+                            content: "An old connection returns with new opportunities."
+                        },
+                        {
+                            title: "The Merge Conflict",
+                            symbol: "🔀",
+                            content: "Integrate competing ideas with careful balance."
+                        },
+                        {
+                            title: "The Stack",
+                            symbol: "📚",
+                            content: "Clear technical debt before adding new features."
+                        },
+                        {
+                            title: "The Variable",
+                            symbol: "🔄",
+                            content: "Adaptability will be your greatest strength."
+                        },
+                        {
+                            title: "The Documentation",
+                            symbol: "📝",
+                            content: "Your willingness to explain will return tenfold."
+                        },
+                        {
+                            title: "The Repository",
+                            symbol: "🗃️",
+                            content: "Past work contains treasures waiting to be found."
+                        },
+                        {
+                            title: "The Firewall",
+                            symbol: "🔒",
+                            content: "Your defensive coding will save the day."
+                        },
+                        {
+                            title: "The Cloud",
+                            symbol: "☁️",
+                            content: "Think beyond local to scale your impact."
+                        },
+                        {
+                            title: "The Standup",
+                            symbol: "👥",
+                            content: "Communication, not code, is your next challenge."
+                        },
+                        {
+                            title: "The API",
+                            symbol: "🔌",
+                            content: "New connections will open unexpected doors."
+                        },
+                        {
+                            title: "The IDE",
+                            symbol: "💻",
+                            content: "Master your environment to master your craft."
+                        },
+                        {
+                            title: "The Prototype",
+                            symbol: "🔬",
+                            content: "First versions contain the seeds of brilliance."
+                        },
+                        {
+                            title: "The Update",
+                            symbol: "⬆️",
+                            content: "Embrace new versions to avoid stagnation."
+                        }
+                    ];
+                
+                    // Track the reading state
+                    let readingState = {
+                        past: null,
+                        present: null,
+                        future: null,
+                        count: 0
+                    };
+                    
+                    // Check if user has seen tutorial before
+                    function checkTutorialViewed() {
+                        if (!localStorage.getItem('tutorialViewed')) {
+                            document.getElementById('tutorialOverlay').classList.add('visible');
+                        }
+                    }
+                    
+                    // Tutorial navigation
+                    let currentStep = 1;
+                    const totalSteps = 4;
+                    
+                    function updateTutorialStep() {
+                        // Hide all steps
+                        document.querySelectorAll('.tutorial-step').forEach(step => {
+                            step.classList.remove('active');
+                        });
+                        
+                        // Show current step
+                        document.querySelector(`.tutorial-step[data-step="${currentStep}"]`).classList.add('active');
+                        
+                        // Update dots
+                        document.querySelectorAll('.tutorial-dot').forEach(dot => {
+                            dot.classList.remove('active');
+                        });
+                        document.querySelector(`.tutorial-dot[data-step="${currentStep}"]`).classList.add('active');
+                        
+                        // Update button visibility
+                        if (currentStep === 1) {
+                            document.getElementById('prevButton').style.visibility = 'hidden';
+                        } else {
+                            document.getElementById('prevButton').style.visibility = 'visible';
+                        }
+                        
+                        if (currentStep === totalSteps) {
+                            document.getElementById('nextButton').textContent = 'Start Reading';
+                        } else {
+                            document.getElementById('nextButton').textContent = 'Next';
+                        }
+                    }
+                    
+                    // Next button handler
+                    document.getElementById('nextButton').addEventListener('click', () => {
+                        if (currentStep < totalSteps) {
+                            currentStep++;
+                            updateTutorialStep();
+                        } else {
+                            // End of tutorial
+                            document.getElementById('tutorialOverlay').classList.remove('visible');
+                            localStorage.setItem('tutorialViewed', 'true');
+                        }
+                    });
+                    
+                    // Previous button handler
+                    document.getElementById('prevButton').addEventListener('click', () => {
+                        if (currentStep > 1) {
+                            currentStep--;
+                            updateTutorialStep();
+                        }
+                    });
+                    
+                    // Skip tutorial
+                    document.getElementById('skipTutorial').addEventListener('click', () => {
+                        document.getElementById('tutorialOverlay').classList.remove('visible');
+                        localStorage.setItem('tutorialViewed', 'true');
+                    });
+                    
+                    // Tutorial dots navigation
+                    document.querySelectorAll('.tutorial-dot').forEach(dot => {
+                        dot.addEventListener('click', () => {
+                            currentStep = parseInt(dot.dataset.step);
+                            updateTutorialStep();
+                        });
+                    });
+                
+                    // Function to shuffle array (Fisher-Yates algorithm)
+                    function shuffleArray(array) {
+                        for (let i = array.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [array[i], array[j]] = [array[j], array[i]];
+                        }
+                        return array;
+                    }
+                
+                    // Function to create and display cards
+                    function createCards() {
+                        const cardContainer = document.getElementById('cardContainer');
+                        cardContainer.innerHTML = '';
+                        
+                        // Reset reading state
+                        readingState = {
+                            past: null,
+                            present: null,
+                            future: null,
+                            count: 0
+                        };
+                        
+                        // Reset interpretation
+                        document.getElementById('readingInterpretation').classList.remove('visible');
+                        
+                        // Reset labels
+                        document.getElementById('pastLabel').classList.remove('active');
+                        document.getElementById('presentLabel').classList.remove('active');
+                        document.getElementById('futureLabel').classList.remove('active');
+                        
+                        // Hide saved readings panel if visible
+                        document.getElementById('savedReadings').classList.remove('visible');
+                        
+                        // Shuffle the cards and take the first 9
+                        const shuffledCards = shuffleArray([...fortuneCards]).slice(0, 9);
+                        
+                        shuffledCards.forEach((card, index) => {
+                            const cardElement = document.createElement('div');
+                            cardElement.className = 'card';
+                            cardElement.dataset.index = index;
+                            
+                            cardElement.innerHTML = `
+                                <div class="card-label"></div>
+                                <div class="card-inner">
+                                    <div class="card-face card-back"></div>
+                                    <div class="card-face card-front">
+                                        <div class="card-content-wrapper">
+                                            <div class="card-symbol">${card.symbol}</div>
+                                            <div class="card-title">${card.title}</div>
+                                            <div class="card-content">${card.content}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            cardContainer.appendChild(cardElement);
+                            
+                            // Add click event listener to flip card
+                            cardElement.addEventListener('click', function() {
+                                if (!this.classList.contains('flipped') && readingState.count < 3) {
+                                    this.classList.add('flipped');
+                                    
+                                    // Create a sparkle effect when card is flipped
+                                    createSparkleEffect(this);
+                                    
+                                    // Assign to past/present/future based on order
+                                    if (readingState.past === null) {
+                                        readingState.past = {
+                                            index: index,
+                                            card: shuffledCards[index]
+                                        };
+                                        this.classList.add('past-card');
+                                        this.querySelector('.card-label').textContent = 'Past';
+                                        document.getElementById('pastLabel').classList.add('active');
+                                    } else if (readingState.present === null) {
+                                        readingState.present = {
+                                            index: index,
+                                            card: shuffledCards[index]
+                                        };
+                                        this.classList.add('present-card');
+                                        this.querySelector('.card-label').textContent = 'Present';
+                                        document.getElementById('presentLabel').classList.add('active');
+                                    } else if (readingState.future === null) {
+                                        readingState.future = {
+                                            index: index,
+                                            card: shuffledCards[index]
+                                        };
+                                        this.classList.add('future-card');
+                                        this.querySelector('.card-label').textContent = 'Future';
+                                        document.getElementById('futureLabel').classList.add('active');
+                                        
+                                        // Show interpretation after a short delay
+                                        setTimeout(showInterpretation, 1000);
+                                    }
+                                    
+                                    readingState.count++;
+                                    
+                                    // Disable remaining cards if we've selected 3
+                                    if (readingState.count >= 3) {
+                                        document.querySelectorAll('.card:not(.flipped)').forEach(card => {
+                                            card.style.opacity = '0.5';
+                                            card.style.cursor = 'not-allowed';
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    
+                    // Function to create sparkle effect when card is flipped
+                    function createSparkleEffect(card) {
+                        const rect = card.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        
+                        for (let i = 0; i < 15; i++) {
+                            const sparkle = document.createElement('div');
+                            sparkle.className = 'particle sparkle';
+                            sparkle.style.width = `${Math.random() * 6 + 2}px`;
+                            sparkle.style.height = sparkle.style.width;
+                            
+                            // Determine color based on card type
+                            let color;
+                            if (card.classList.contains('past-card')) {
+                                color = 'rgba(70, 130, 180, 0.8)'; // past color
+                            } else if (card.classList.contains('present-card')) {
+                                color = 'rgba(147, 112, 219, 0.8)'; // present color
+                            } else if (card.classList.contains('future-card')) {
+                                color = 'rgba(32, 178, 170, 0.8)'; // future color
+                            } else {
+                                color = 'rgba(255, 255, 255, 0.8)'; // default white
+                            }
+                            
+                            sparkle.style.backgroundColor = color;
+                            sparkle.style.boxShadow = `0 0 6px 2px ${color}`;
+                            
+                            document.body.appendChild(sparkle);
+                            
+                            const angle = Math.random() * Math.PI * 2;
+                            const distance = Math.random() * 100 + 50;
+                            const startX = centerX;
+                            const startY = centerY;
+                            const endX = centerX + Math.cos(angle) * distance;
+                            const endY = centerY + Math.sin(angle) * distance;
+                            
+                            sparkle.style.left = `${startX}px`;
+                            sparkle.style.top = `${startY}px`;
+                            
+                            const duration = Math.random() * 1000 + 500;
+                            
+                            // Animate the sparkle
+                            sparkle.animate([
+                                { 
+                                    transform: 'scale(0)', 
+                                    opacity: 1,
+                                    left: `${startX}px`,
+                                    top: `${startY}px`
+                                },
+                                { 
+                                    transform: 'scale(1)',
+                                    opacity: 0.5,
+                                    left: `${endX}px`,
+                                    top: `${endY}px`
+                                },
+                                { 
+                                    transform: 'scale(0)',
+                                    opacity: 0,
+                                    left: `${endX}px`,
+                                    top: `${endY}px`
+                                }
+                            ], {
+                                duration: duration,
+                                easing: 'cubic-bezier(0.11, 0.91, 0.83, 0.67)'
+                            }).onfinish = () => {
+                                sparkle.remove();
+                            };
+                        }
+                    }
+                    
+                    // Function to show reading interpretation
+                    function showInterpretation() {
+                        const interpretation = document.getElementById('readingInterpretation');
+                        const content = document.getElementById('readingContent');
+                        
+                        if (readingState.past && readingState.present && readingState.future) {
+                            const pastCard = readingState.past.card;
+                            const presentCard = readingState.present.card;
+                            const futureCard = readingState.future.card;
+                            
+                            // Create interpretation based on the cards drawn
+                            content.innerHTML = `
+                                <p>Your developer journey reflects an interesting path. In your past, <strong>${pastCard.title}</strong> shows that ${pastCard.content.toLowerCase()} This has shaped your approach to coding challenges.</p>
+                                <p>Currently, <strong>${presentCard.title}</strong> influences your work. ${presentCard.content} This represents your current coding environment and challenges.</p>
+                                <p>Looking to your future, <strong>${futureCard.title}</strong> suggests ${futureCard.content.toLowerCase()} This will be key to your growth as a developer.</p>
+                                <p>Together, these cards suggest you should focus on combining the wisdom from your past experience with your present skills, while embracing the change that will lead to your future success.</p>
+                            `;
+                            
+                            interpretation.classList.add('visible');
+                        }
+                    }
+                    
+                    // Function to save reading to Firebase
+                    function saveReading() {
+                        // Check if user is logged in
+                        const user = auth.currentUser;
+                        
+                        if (!user) {
+                            alert("Please sign in to save your reading");
+                            document.getElementById('savedReadings').classList.add('visible');
+                            return;
+                        }
+                        
+                        // Check if we have a complete reading
+                        if (!readingState.past || !readingState.present || !readingState.future) {
+                            alert("Please complete your reading before saving");
+                            return;
+                        }
+                        
+                        // Create reading object
+                        const reading = {
+                            userId: user.uid,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            past: {
+                                title: readingState.past.card.title,
+                                symbol: readingState.past.card.symbol,
+                                content: readingState.past.card.content
+                            },
+                            present: {
+                                title: readingState.present.card.title,
+                                symbol: readingState.present.card.symbol,
+                                content: readingState.present.card.content
+                            },
+                            future: {
+                                title: readingState.future.card.title,
+                                symbol: readingState.future.card.symbol,
+                                content: readingState.future.card.content
+                            }
+                        };
+                        
+                        // Save to Firebase
+                        db.collection("readings").add(reading)
+                            .then((docRef) => {
+                                alert("Reading saved successfully!");
+                                loadSavedReadings();
+                            })
+                            .catch((error) => {
+                                console.error("Error saving reading: ", error);
+                                alert("Error saving reading. Please try again.");
+                            });
+                    }
+                    
+                    // Function to load saved readings from Firebase
+                    function loadSavedReadings() {
+                        const user = auth.currentUser;
+                        const savedReadingsList = document.getElementById('savedReadingsList');
+                        const loginPrompt = document.getElementById('loginPrompt');
+                        
+                        savedReadingsList.innerHTML = '';
+                        
+                        if (!user) {
+                            // Show login prompt if not signed in
+                            loginPrompt.style.display = 'block';
+                            return;
+                        }
+                        
+                        // Hide login prompt if signed in
+                        loginPrompt.style.display = 'none';
+                        
+                        // Get user's readings
+                        db.collection("readings")
+                            .where("userId", "==", user.uid)
+                            .orderBy("timestamp", "desc")
+                            .get()
+                            .then((querySnapshot) => {
+                                if (querySnapshot.empty) {
+                                    savedReadingsList.innerHTML = '<p>No saved readings yet</p>';
+                                    return;
+                                }
+                                
+                                querySnapshot.forEach((doc) => {
+                                    const reading = doc.data();
+                                    const date = reading.timestamp ? new Date(reading.timestamp.toDate()).toLocaleString() : 'Unknown date';
+                                    
+                                    const readingElement = document.createElement('div');
+                                    readingElement.className = 'saved-reading-item';
+                                    readingElement.innerHTML = `
+                                        <div class="saved-reading-date">${date}</div>
+                                        <div class="saved-reading-cards">
+                                            <span title="${reading.past.content}">${reading.past.symbol} ${reading.past.title}</span> →
+                                            <span title="${reading.present.content}">${reading.present.symbol} ${reading.present.title}</span> →
+                                            <span title="${reading.future.content}">${reading.future.symbol} ${reading.future.title}</span>
+                                        </div>
+                                        <button class="delete-reading" data-id="${doc.id}">Delete</button>
+                                    `;
+                                    
+                                    // Add event listener to load reading
+                                    readingElement.addEventListener('click', (e) => {
+                                        if (e.target.classList.contains('delete-reading')) {
+                                            return; // Handle delete separately
+                                        }
+                                        loadReading(reading);
+                                    });
+                                    
+                                    savedReadingsList.appendChild(readingElement);
+                                });
+                                
+                                // Add event listeners for delete buttons
+                                document.querySelectorAll('.delete-reading').forEach(button => {
+                                    button.addEventListener('click', (e) => {
+                                        e.stopPropagation();
+                                        const id = e.target.dataset.id;
+                                        deleteReading(id);
+                                    });
+                                });
+                            })
+                            .catch((error) => {
+                                console.error("Error loading readings: ", error);
+                                savedReadingsList.innerHTML = '<p>Error loading readings</p>';
+                            });
+                    }
+                    
+                    // Function to load a saved reading
+                    function loadReading(reading) {
+                        // Reset cards
+                        createCards();
+                        
+                        // Wait for cards to be created
+                        setTimeout(() => {
+                            const cards = document.querySelectorAll('.card');
+                            
+                            // Find cards with matching titles and flip them
+                            let pastCard, presentCard, futureCard;
+                            
+                            cards.forEach((card, index) => {
+                                const cardInner = card.querySelector('.card-inner');
+                                const title = cardInner.querySelector('.card-title').textContent;
+                                
+                                if (title === reading.past.title) {
+                                    pastCard = card;
+                                } else if (title === reading.present.title) {
+                                    presentCard = card;
+                                } else if (title === reading.future.title) {
+                                    futureCard = card;
+                                }
+                            });
+                            
+                            // Simulate clicks on the cards
+                            if (pastCard) {
+                                pastCard.click();
+                                
+                                setTimeout(() => {
+                                    if (presentCard) {
+                                        presentCard.click();
+                                        
+                                        setTimeout(() => {
+                                            if (futureCard) {
+                                                futureCard.click();
+                                            }
+                                        }, 800);
+                                    }
+                                }, 800);
+                            }
+                            
+                            // Hide saved readings panel
+                            document.getElementById('savedReadings').classList.remove('visible');
+                        }, 500);
+                    }
+                    
+                    // Function to delete a reading
+                    function deleteReading(id) {
+                        if (confirm('Are you sure you want to delete this reading?')) {
+                            db.collection("readings").doc(id).delete()
+                                .then(() => {
+                                    loadSavedReadings();
+                                })
+                                .catch((error) => {
+                                    console.error("Error deleting reading: ", error);
+                                    alert("Error deleting reading");
+                                });
+                        }
+                    }
+                    
+                    // Function to share reading
+                    function shareReading() {
+                        // Check if we have a complete reading
+                        if (!readingState.past || !readingState.present || !readingState.future) {
+                            alert("Please complete your reading before sharing");
+                            return;
+                        }
+                        
+                        document.getElementById('shareOptions').classList.add('visible');
+                    }
+                    
+                    // Close share options
+                    document.getElementById('closeShare').addEventListener('click', () => {
+                        document.getElementById('shareOptions').classList.remove('visible');
+                    });
+                    
+                    // Share handlers
+                    document.getElementById('shareFacebook').addEventListener('click', () => {
+                        const text = `Check out my Developer's Fortune Teller reading: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
+                        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`;
+                        window.open(url, '_blank');
+                    });
+                    
+                    document.getElementById('shareTwitter').addEventListener('click', () => {
+                        const text = `My developer fortune: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title} #DeveloperFortune`;
+                        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+                        window.open(url, '_blank');
+                    });
+                    
+                    document.getElementById('shareWhatsapp').addEventListener('click', () => {
+        const text = `Check out my Developer's Fortune Teller reading: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
+        const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`;
+        window.open(url, '_blank');
+    });
+    
+    document.getElementById('shareEmail').addEventListener('click', () => {
+        const subject = "My Developer's Fortune Teller Reading";
+        const body = `Check out my Developer's Fortune Reading:\n\nPast: ${readingState.past.card.title} - ${readingState.past.card.content}\nPresent: ${readingState.present.card.title} - ${readingState.present.card.content}\nFuture: ${readingState.future.card.title} - ${readingState.future.card.content}\n\nGet your own reading at: ${window.location.href}`;
+        const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(url, '_blank');
+    });
+    
+    document.getElementById('copyLink').addEventListener('click', () => {
+        const text = `Developer's Fortune: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
+        // In a real implementation, you would generate a unique URL with the cards in the query parameters
+        // For this demo, we'll just copy the current URL with some added text
+        const shareText = text + ' ' + window.location.href;
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(shareText)
+            .then(() => {
+                alert('Link copied to clipboard!');
+                document.getElementById('shareOptions').classList.remove('visible');
+            })
+            .catch(err => {
+                console.error('Could not copy text: ', err);
+                alert('Error copying link');
+            });
+    });
+
+    // Function to create particles
+    function createParticles() {
+        const container = document.getElementById('particles-container');
+        const particleCount = Math.min(window.innerWidth / 5, 100); // Adjust based on screen size
+        
+        // Create particles
+        for (let i = 0; i < particleCount; i++) {
+            createParticle(container);
+        }
+    }
+    
+    // Function to create a single particle
+    function createParticle(container) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // Random size between 1 and 4 pixels
+        const size = Math.random() * 3 + 1;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        
+        // Random position
+        const posX = Math.random() * 100;
+        const posY = Math.random() * 100;
+        particle.style.left = `${posX}%`;
+        particle.style.top = `${posY}%`;
+        
+        // Random opacity and color
+        const opacity = Math.random() * 0.5 + 0.1;
+        
+        // Colors that match the mystical theme
+        const colors = [
+            'rgba(106, 90, 205, ' + opacity + ')', // Slateblue
+            'rgba(147, 112, 219, ' + opacity + ')', // Medium Purple
+            'rgba(138, 43, 226, ' + opacity + ')', // Blueviolet
+            'rgba(123, 104, 238, ' + opacity + ')', // Medium Slateblue
+            'rgba(186, 85, 211, ' + opacity + ')', // Medium Orchid
+            'rgba(148, 0, 211, ' + opacity + ')', // Dark Violet
+            'rgba(75, 0, 130, ' + opacity + ')', // Indigo
+            'rgba(72, 61, 139, ' + opacity + ')', // Dark Slateblue
+            'rgba(230, 230, 250, ' + opacity + ')', // Lavender
+        ];
+        
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.backgroundColor = color;
+        
+        // Add subtle glow to some particles
+        if (Math.random() > 0.7) {
+            particle.style.boxShadow = `0 0 ${size * 2}px ${color}`;
+        }
+        
+        container.appendChild(particle);
+        
+        // Animate the particle
+        animateParticle(particle);
+        
+        return particle;
+    }
+    
+    // Function to animate a particle
+    function animateParticle(particle) {
+        // Current position
+        const currentLeft = parseFloat(particle.style.left);
+        const currentTop = parseFloat(particle.style.top);
+        
+        // Random movement (small distance)
+        const movementX = (Math.random() - 0.5) * 10;
+        const movementY = (Math.random() - 0.5) * 10;
+        
+        // New position (ensure it stays within view)
+        let newLeft = currentLeft + movementX;
+        let newTop = currentTop + movementY;
+        
+        // Keep particles within bounds
+        newLeft = Math.max(0, Math.min(100, newLeft));
+        newTop = Math.max(0, Math.min(100, newTop));
+        
+        // Duration of animation (between 5 and 15 seconds)
+        const duration = Math.random() * 10000 + 5000;
+        
+        // Animate the movement
+        const animation = particle.animate([
+            { left: `${currentLeft}%`, top: `${currentTop}%`, opacity: parseFloat(particle.style.opacity) || 0.5 },
+            { left: `${newLeft}%`, top: `${newTop}%`, opacity: Math.random() * 0.5 + 0.1 }
+        ], {
+            duration: duration,
+            easing: 'linear',
+            fill: 'forwards'
+        });
+        
+        // When animation completes, start a new one
+        animation.onfinish = () => {
+            particle.style.left = `${newLeft}%`;
+            particle.style.top = `${newTop}%`;
+            
+            // Random decision to either continue animating or replace this particle
+            if (Math.random() > 0.1) {
+                animateParticle(particle);
+            } else {
+                particle.remove();
+                createParticle(document.getElementById('particles-container'));
+            }
+        };
+    }
+    
+    // Function to add pulsing effect to elements
+    function addPulsingEffects() {
+        // Add gentle pulsing to the title
+        const title = document.querySelector('h1');
+        setInterval(() => {
+            title.style.textShadow = '0 0 15px rgba(147, 112, 219, 0.7)';
+            setTimeout(() => {
+                title.style.textShadow = '0 0 10px rgba(147, 112, 219, 0.4)';
+            }, 1000);
+        }, 2000);
+    }
+    
+    // Firebase Authentication Functions
+    function setupAuthListeners() {
+        // Auth state change listener
+        auth.onAuthStateChanged(user => {
+            const loginPrompt = document.getElementById('loginPrompt');
+            
+            if (user) {
+                // User is signed in
+                console.log("User signed in:", user.email);
+                loginPrompt.style.display = 'none';
+                loadSavedReadings();
+            } else {
+                // User is signed out
+                loginPrompt.style.display = 'block';
+            }
+        });
+        
+        // Sign in button
+        document.getElementById('signInButton').addEventListener('click', () => {
+            const email = prompt("Enter your email:");
+            if (!email) return;
+            
+            const password = prompt("Enter your password:");
+            if (!password) return;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed in
+                    const user = userCredential.user;
+                    console.log("Signed in:", user.email);
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    alert(`Error: ${errorMessage}`);
+                });
+        });
+        
+        // Sign up button
+        document.getElementById('signUpButton').addEventListener('click', () => {
+            const email = prompt("Enter your email:");
+            if (!email) return;
+            
+            const password = prompt("Create a password (at least 6 characters):");
+            if (!password || password.length < 6) {
+                alert("Password must be at least 6 characters");
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Signed up and signed in
+                    const user = userCredential.user;
+                    console.log("Signed up:", user.email);
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    alert(`Error: ${errorMessage}`);
+                });
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('resetButton').addEventListener('click', () => {
+        createCards();
+    });
+    
+    document.getElementById('saveButton').addEventListener('click', () => {
+        saveReading();
+    });
+    
+    document.getElementById('shareButton').addEventListener('click', () => {
+        shareReading();
+    });
+    
+    document.getElementById('savedReadingsButton').addEventListener('click', () => {
+        document.getElementById('savedReadings').classList.toggle('visible');
+        if (document.getElementById('savedReadings').classList.contains('visible')) {
+            loadSavedReadings();
+        }
+    });
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        createCards();
+        createParticles();
+        addPulsingEffects();
+        setupAuthListeners();
+        checkTutorialViewed();
+        
+        // Periodically add new particles to ensure the effect continues
+        setInterval(() => {
+            if (document.getElementById('particles-container').childElementCount < 100) {
+                createParticle(document.getElementById('particles-container'));
+            }
+        }, 1000);
+    });
+    
+    // Re-create particles when window resizes
+    window.addEventListener('resize', () => {
+        const container = document.getElementById('particles-container');
+        container.innerHTML = '';
+        createParticles();
+    });
+</script>
