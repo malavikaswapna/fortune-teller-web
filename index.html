@@ -753,9 +753,172 @@
                 font-size: 0.8rem;
             }
         }
+
+        /* Auth corner button */
+.auth-corner {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+}
+
+.auth-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.auth-button:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+.auth-status {
+    font-weight: bold;
+}
+
+/* Auth panel */
+.auth-panel {
+    position: fixed;
+    top: 4rem;
+    right: 1rem;
+    background-color: rgba(36, 36, 65, 0.95);
+    border: 1px solid var(--primary-color);
+    border-radius: 10px;
+    width: 300px;
+    padding: 1.5rem;
+    z-index: 100;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    transform: translateY(-10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.auth-panel.visible {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.close-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.close-button:hover {
+    opacity: 1;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.auth-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.auth-tab.active {
+    opacity: 1;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.auth-tab:hover {
+    opacity: 1;
+}
+
+.auth-content h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--secondary-color);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(147, 112, 219, 0.2);
+}
+
+.auth-submit {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.auth-footer a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
     </style>
 </head>
 <body>
+    <div class="auth-corner">
+        <button class="auth-button" id="authToggleButton">
+            <span class="button-icon">👤</span>
+            <span class="auth-status">Sign In</span>
+        </button>
+    </div>
+
     <div id="particles-container"></div>
     
     <!-- Tutorial Overlay -->
@@ -841,6 +1004,59 @@
                     <div class="share-option" id="copyLink">
                         <div class="share-icon">🔗</div>
                         <div>Copy Link</div>
+                    </div>
+                </div>
+
+                <div class="auth-panel" id="authPanel">
+                    <button class="close-button" id="closeAuthPanel">✕</button>
+                    
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" id="signInTab">Sign In</button>
+                        <button class="auth-tab" id="signUpTab">Sign Up</button>
+                    </div>
+                    
+                    <div class="auth-content" id="signInContent">
+                        <h3>Welcome Back</h3>
+                        <form id="signInForm">
+                            <div class="form-group">
+                                <label for="signInEmail">Email</label>
+                                <input type="email" id="signInEmail" required placeholder="your@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="signInPassword">Password</label>
+                                <input type="password" id="signInPassword" required placeholder="Your password">
+                            </div>
+                            <button type="submit" class="button auth-submit">
+                                <span class="button-icon">🔑</span> Sign In
+                            </button>
+                        </form>
+                        <div class="auth-footer">
+                            Don't have an account? <a href="#" id="switchToSignUp">Sign up</a>
+                        </div>
+                    </div>
+                    
+                    <div class="auth-content" id="signUpContent" style="display: none;">
+                        <h3>Create Account</h3>
+                        <form id="signUpForm">
+                            <div class="form-group">
+                                <label for="signUpEmail">Email</label>
+                                <input type="email" id="signUpEmail" required placeholder="your@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="signUpPassword">Password</label>
+                                <input type="password" id="signUpPassword" required placeholder="Minimum 6 characters">
+                            </div>
+                            <div class="form-group">
+                                <label for="signUpPasswordConfirm">Confirm Password</label>
+                                <input type="password" id="signUpPasswordConfirm" required placeholder="Same as above">
+                            </div>
+                            <button type="submit" class="button auth-submit">
+                                <span class="button-icon">👤</span> Sign Up
+                            </button>
+                        </form>
+                        <div class="auth-footer">
+                            Already have an account? <a href="#" id="switchToSignIn">Sign in</a>
+                        </div>
                     </div>
                 </div>
                 
@@ -1668,68 +1884,145 @@
         }, 2000);
     }
     
-    // Firebase Authentication Functions
-    function setupAuthListeners() {
-        // Auth state change listener
-        auth.onAuthStateChanged(user => {
-            const loginPrompt = document.getElementById('loginPrompt');
-            
-            if (user) {
-                // User is signed in
-                console.log("User signed in:", user.email);
-                loginPrompt.style.display = 'none';
-                loadSavedReadings();
-            } else {
-                // User is signed out
-                loginPrompt.style.display = 'block';
-            }
+    // Auth panel functionality
+const authToggleButton = document.getElementById('authToggleButton');
+const authPanel = document.getElementById('authPanel');
+const closeAuthPanel = document.getElementById('closeAuthPanel');
+const signInTab = document.getElementById('signInTab');
+const signUpTab = document.getElementById('signUpTab');
+const signInContent = document.getElementById('signInContent');
+const signUpContent = document.getElementById('signUpContent');
+const switchToSignUp = document.getElementById('switchToSignUp');
+const switchToSignIn = document.getElementById('switchToSignIn');
+const signInForm = document.getElementById('signInForm');
+const signUpForm = document.getElementById('signUpForm');
+const authStatus = document.querySelector('.auth-status');
+
+// Toggle auth panel
+authToggleButton.addEventListener('click', () => {
+    authPanel.classList.toggle('visible');
+});
+
+// Close auth panel
+closeAuthPanel.addEventListener('click', () => {
+    authPanel.classList.remove('visible');
+});
+
+// Tab switching
+signInTab.addEventListener('click', () => {
+    signInTab.classList.add('active');
+    signUpTab.classList.remove('active');
+    signInContent.style.display = 'block';
+    signUpContent.style.display = 'none';
+});
+
+signUpTab.addEventListener('click', () => {
+    signUpTab.classList.add('active');
+    signInTab.classList.remove('active');
+    signUpContent.style.display = 'block';
+    signInContent.style.display = 'none';
+});
+
+// Footer links
+switchToSignUp.addEventListener('click', (e) => {
+    e.preventDefault();
+    signUpTab.click();
+});
+
+switchToSignIn.addEventListener('click', (e) => {
+    e.preventDefault();
+    signInTab.click();
+});
+
+// Form submission
+signInForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signInEmail').value;
+    const password = document.getElementById('signInPassword').value;
+    
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // Signed in
+            authPanel.classList.remove('visible');
+            updateAuthStatus(true);
+            // Clear the form
+            signInForm.reset();
+        })
+        .catch((error) => {
+            alert(`Error: ${error.message}`);
         });
-        
-        // Sign in button
-        document.getElementById('signInButton').addEventListener('click', () => {
-            const email = prompt("Enter your email:");
-            if (!email) return;
-            
-            const password = prompt("Enter your password:");
-            if (!password) return;
-            
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Signed in
-                    const user = userCredential.user;
-                    console.log("Signed in:", user.email);
-                })
-                .catch((error) => {
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    alert(`Error: ${errorMessage}`);
-                });
-        });
-        
-        // Sign up button
-        document.getElementById('signUpButton').addEventListener('click', () => {
-            const email = prompt("Enter your email:");
-            if (!email) return;
-            
-            const password = prompt("Create a password (at least 6 characters):");
-            if (!password || password.length < 6) {
-                alert("Password must be at least 6 characters");
-                return;
-            }
-            
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Signed up and signed in
-                    const user = userCredential.user;
-                    console.log("Signed up:", user.email);
-                })
-                .catch((error) => {
-                    const errorCode = error.code;
-                    const errorMessage = error.message;
-                    alert(`Error: ${errorMessage}`);
-                });
-        });
+});
+
+signUpForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signUpEmail').value;
+    const password = document.getElementById('signUpPassword').value;
+    const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
+    
+    if (password !== passwordConfirm) {
+        alert("Passwords don't match!");
+        return;
     }
+    
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters");
+        return;
+    }
+    
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // Signed up & signed in
+            authPanel.classList.remove('visible');
+            updateAuthStatus(true);
+            // Clear the form
+            signUpForm.reset();
+        })
+        .catch((error) => {
+            alert(`Error: ${error.message}`);
+        });
+});
+
+// Update button text based on auth state
+function updateAuthStatus(signedIn) {
+    if (signedIn) {
+        const user = auth.currentUser;
+        if (user) {
+            const email = user.email;
+            const username = email.split('@')[0];
+            authStatus.textContent = username;
+            authToggleButton.querySelector('.button-icon').textContent = '✓';
+        }
+    } else {
+        authStatus.textContent = 'Sign In';
+        authToggleButton.querySelector('.button-icon').textContent = '👤';
+    }
+}
+
+// Add this to your auth state listener
+auth.onAuthStateChanged(user => {
+    const loginPrompt = document.getElementById('loginPrompt');
+    
+    if (user) {
+        // User is signed in
+        loginPrompt.style.display = 'none';
+        updateAuthStatus(true);
+        loadSavedReadings();
+    } else {
+        // User is signed out
+        loginPrompt.style.display = 'block';
+        updateAuthStatus(false);
+    }
+});
+
+// Sign out functionality (add this to the auth button)
+authToggleButton.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (auth.currentUser) {
+        if (confirm("Sign out?")) {
+            auth.signOut();
+        }
+    }
+});
 
     // Event Listeners
     document.getElementById('resetButton').addEventListener('click', () => {
@@ -1756,7 +2049,6 @@
         createCards();
         createParticles();
         addPulsingEffects();
-        setupAuthListeners();
         checkTutorialViewed();
         
         // Periodically add new particles to ensure the effect continues
