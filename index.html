@@ -3299,7 +3299,20 @@ function generateExportHTML(template) {
   const past = readingState.past.card;
   const present = readingState.present.card;
   const future = readingState.future.card;
-  const journeyText = document.getElementById('readingContent')?.innerHTML || '';
+  const fullContent = document.getElementById('readingContent')?.innerHTML || '';
+  
+  // Split the content to separate the journey text from recommendations
+  const recommendationsStartIndex = fullContent.indexOf('<div class="recommendations-section">');
+  
+  // If we found the recommendations section, split the content
+  let journeyText = fullContent;
+  let recommendationsText = '';
+  
+  if (recommendationsStartIndex !== -1) {
+    journeyText = fullContent.substring(0, recommendationsStartIndex);
+    recommendationsText = fullContent.substring(recommendationsStartIndex);
+  }
+  
   const date = new Date().toLocaleString();
 
   return `
@@ -3327,22 +3340,25 @@ function generateExportHTML(template) {
     <!-- Page Break -->
     <div class="page-break"></div>
 
-    <!-- Page 2 -->
+    <!-- Page 2 - Recommendations -->
     <div class="page-two">
-      <h3>📚 Some recs:</h3>
-      <div class="recommendation">
-        <strong>Book:</strong> The Phoenix Project by Gene Kim<br>
-        <em>A novel about IT, DevOps, and helping your business win</em>
-      </div>
-      <div class="recommendation">
-        <strong>Learning Resource:</strong> GitHub Learning Lab
-      </div>
-      <div class="recommendation">
-        <strong>Programming Technique:</strong> Use feature flags
-      </div>
-      <div class="recommendation">
-        <strong>Career Tip:</strong> Master tools that increase your marketability
-      </div>
+      ${recommendationsText ? recommendationsText : `
+        <h3>📚 Some recs:</h3>
+        <div class="recommendation">
+          <strong>Book:</strong> The Pragmatic Programmer by Andrew Hunt & David Thomas<br>
+          <em>From journeyman to master - timeless advice for software developers.</em>
+        </div>
+        <div class="recommendation">
+          <strong>Learning Resource:</strong> freeCodeCamp<br>
+          <em>Learn to code with interactive challenges and earn certifications.</em>
+        </div>
+        <div class="recommendation">
+          <strong>Programming Technique:</strong> Practice code reviews with yourself by revisiting code after a cooldown period.
+        </div>
+        <div class="recommendation">
+          <strong>Career Tip:</strong> Build a portfolio of projects that demonstrate your skills and problem-solving abilities.
+        </div>
+      `}
       <div class="timestamp" style="margin-top: 2rem; font-size: 0.8rem; opacity: 0.6;">
         Generated at: ${date}
       </div>
@@ -3350,6 +3366,7 @@ function generateExportHTML(template) {
   </div>
   `;
 }
+
 
 
 async function exportReading(format) {
