@@ -683,8 +683,21 @@
                 grid-template-columns: repeat(3, 1fr);
                 gap: 10px;
                 padding: 0.5rem;
+                padding-bottom: 3.5rem; /* Add space below cards to prevent button overlap */
+                margin-bottom: 3rem;
+                overflow: visible;
             }
-            
+            .button-container {
+                position: relative;
+                z-index: 10;
+                background-color: var(--bg-color);
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+                margin-top: 2rem; /* Add more space above buttons */
+            }
+            .card {
+                max-width: 100px; /* Make cards slightly smaller on mobile */
+            }
             .instructions {
                 padding: 0.8rem;
             }
@@ -700,6 +713,7 @@
             
             .reading-labels {
                 font-size: 0.7rem;
+                margin-bottom: 0.8rem;
             }
             
             .reading-label {
@@ -712,7 +726,81 @@
             }
             
             .tutorial-content {
-                padding: 1.5rem;
+                width: 90%;
+                padding: 1.5rem 1rem;
+            }
+            .tutorial-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            .auth-corner {
+                top: 10px;
+                right: 10px;
+                z-index: 100;
+            }
+            .auth-button {
+                padding: 0.4rem 0.7rem;
+                font-size: 0.8rem;
+            }
+            .auth-panel {
+                width: 90%;
+                right: 5%;
+                left: 5%;
+                top: 3.5rem;
+            }
+            .auth-tabs {
+                margin-bottom: 1rem;
+            }
+            h1 {
+                font-size: clamp(1.6rem, 4vw, 2rem);
+                margin-top: 2.5rem; /* Add space above the header to prevent overlap */
+                margin-bottom: 0.3rem;
+            } 
+            .subtitle {
+                font-size: clamp(0.9rem, 2vw, 1.1rem);
+                margin-bottom: 1rem;
+            }
+    
+            /* Reduce padding in header for mobile */
+            header {
+                padding: 1rem 0.8rem;
+            }
+            .reading-interpretation {
+                margin-top: 4rem; /* Add more space above interpretation */
+                z-index: 5;
+                position: relative;
+            }
+            .share-options {
+                top: 40%; /* Move down from the top edge */
+                max-height: 80vh; /* Limit height */
+                overflow-y: auto; /* Allow scrolling */
+                width: 90%; /* Take up more width on mobile */
+                padding: 1rem 0.8rem;
+            }
+    
+            .export-template {
+                max-width: 100%;
+                padding: 0.8rem;
+                font-size: 0.9rem;
+            }
+    
+            .close-share {
+                top: 5px;
+                right: 5px;
+            }
+            .content-container {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .form-group {
+                margin-bottom: 0.8rem;
+            }
+            footer {
+                margin-top: 2rem;
+            }
+            #particles-container {
+                opacity: 0.5; /* Reduce opacity on mobile for better readability */
             }
         }
         
@@ -1000,10 +1088,18 @@
   display: flex;
   gap: 1rem;
   justify-content: center;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 #exportPreview {
   text-align: center;
+}
+#exportModal h3 {
+    margin-top: 1.5rem;
+}
+.export-buttons .button {
+    width: 100%;
 }
 
 .export-template {
