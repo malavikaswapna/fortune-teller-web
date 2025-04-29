@@ -112,12 +112,12 @@ npx http-server
 
 <div align="center">
   <p>
-    <img src="https://i.imgur.com/eF8VLYt.jpg" alt="Login Screen" width="400"/>
-    <img src="https://i.imgur.com/MUQCv8E.jpg" alt="Card Selection" width="400"/>
+    <img src="https://i.imgur.com/cAh1xBs.png" alt="Login Screen" width="400"/>
+    <img src="https://i.imgur.com/K3bqr1D.png" alt="Card Selection" width="400"/>
   </p>
   <p>
-    <img src="https://i.imgur.com/3nEDcUt.jpg" alt="Reading Interpretation" width="400"/>
-    <img src="https://i.imgur.com/pDdXDPl.jpg" alt="Recommendations" width="400"/>
+    <img src="https://i.imgur.com/zyGNZTq.png" alt="Reading Interpretation" width="400"/>
+    <img src="https://i.imgur.com/hPc25Rv.png" alt="Recommendations" width="400"/>
   </p>
 </div>
 
