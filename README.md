@@ -132,7 +132,7 @@ The app uses a sophisticated interpretation engine that:
 
 ## 🌟 Future Development
 
-- [ ] Add animated card flip effects
+- [X] Add animated card flip effects
 - [ ] Implement dark/light theme options
 - [ ] Create weekly/monthly reading options
 - [ ] Develop more specialized readings (career path, project success, etc.)
