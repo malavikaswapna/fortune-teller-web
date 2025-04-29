@@ -2005,46 +2005,101 @@
                     // Share handlers
                     document.getElementById('shareFacebook').addEventListener('click', () => {
                         const text = `Check out my Developer's Fortune Teller reading: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
-                        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`;
+                        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://malavikaswapna.github.io/fortune-teller-web/')}&quote=${encodeURIComponent(text)}`;
                         window.open(url, '_blank');
                     });
                     
                     document.getElementById('shareTwitter').addEventListener('click', () => {
                         const text = `My developer fortune: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title} #DeveloperFortune`;
-                        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+                        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://malavikaswapna.github.io/fortune-teller-web/')}`;
                         window.open(url, '_blank');
                     });
                     
                     document.getElementById('shareWhatsapp').addEventListener('click', () => {
-        const text = `Check out my Developer's Fortune Teller reading: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
-        const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + window.location.href)}`;
-        window.open(url, '_blank');
-    });
+                        const text = `Check out my Developer's Fortune Teller reading: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
+                        const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + 'https://malavikaswapna.github.io/fortune-teller-web/')}`;
+                        window.open(url, '_blank');
+                    });
+                    document.getElementById('shareEmail').addEventListener('click', () => {
+                        const subject = "My Developer's Fortune Teller Reading";
+                        const body = `Check out my Developer's Fortune Reading:\n\nPast: ${readingState.past.card.title} - ${readingState.past.card.content}\nPresent: ${readingState.present.card.title} - ${readingState.present.card.content}\nFuture: ${readingState.future.card.title} - ${readingState.future.card.content}\n\nGet your own reading at: https://malavikaswapna.github.io/fortune-teller-web/`;
+                        const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                        window.open(url, '_blank');
+                    });
+
+                    document.getElementById('copyLink').addEventListener('click', () => {
+                        const text = `Developer's Fortune: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
+                        // Use the correct GitHub Pages URL
+                        const shareText = text + ' https://malavikaswapna.github.io/fortune-teller-web/';
     
-    document.getElementById('shareEmail').addEventListener('click', () => {
-        const subject = "My Developer's Fortune Teller Reading";
-        const body = `Check out my Developer's Fortune Reading:\n\nPast: ${readingState.past.card.title} - ${readingState.past.card.content}\nPresent: ${readingState.present.card.title} - ${readingState.present.card.content}\nFuture: ${readingState.future.card.title} - ${readingState.future.card.content}\n\nGet your own reading at: ${window.location.href}`;
-        const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(url, '_blank');
-    });
+                        // Copy to clipboard
+                        navigator.clipboard.writeText(shareText)
+                        .then(() => {
+                            alert('Link copied to clipboard!');
+                            document.getElementById('shareOptions').classList.remove('visible');
+                        })
+                        .catch(err => {
+                            console.error('Could not copy text: ', err);
+                            alert('Error copying link');
+                        });
+                    });
+
+                    // Optional: Create a function to generate shareable URLs with card data in query parameters
+// This allows sharing specific readings directly
+function generateShareableURL() {
+    if (!readingState.past || !readingState.present || !readingState.future) {
+        return 'https://malavikaswapna.github.io/fortune-teller-web/';
+    }
     
-    document.getElementById('copyLink').addEventListener('click', () => {
-        const text = `Developer's Fortune: ${readingState.past.card.title} → ${readingState.present.card.title} → ${readingState.future.card.title}`;
-        // In a real implementation, you would generate a unique URL with the cards in the query parameters
-        // For this demo, we'll just copy the current URL with some added text
-        const shareText = text + ' ' + window.location.href;
+    // Create URL with cards in query parameters
+    const baseUrl = 'https://malavikaswapna.github.io/fortune-teller-web/';
+    const queryParams = new URLSearchParams();
+    
+    queryParams.append('past', readingState.past.card.title);
+    queryParams.append('present', readingState.present.card.title);
+    queryParams.append('future', readingState.future.card.title);
+    
+    return `${baseUrl}?${queryParams.toString()}`;
+}
+
+// Optional: Function to load cards from URL parameters
+// Add this to your initialization code to support direct sharing of readings
+function loadCardsFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pastCard = urlParams.get('past');
+    const presentCard = urlParams.get('present');
+    const futureCard = urlParams.get('future');
+    
+    // If we have all three cards in the URL, try to load that specific reading
+    if (pastCard && presentCard && futureCard) {
+        // Create cards first
+        createCards();
         
-        // Copy to clipboard
-        navigator.clipboard.writeText(shareText)
-            .then(() => {
-                alert('Link copied to clipboard!');
-                document.getElementById('shareOptions').classList.remove('visible');
-            })
-            .catch(err => {
-                console.error('Could not copy text: ', err);
-                alert('Error copying link');
+        // Then try to find and flip the specified cards
+        setTimeout(() => {
+            const cards = document.querySelectorAll('.card');
+            
+            cards.forEach(card => {
+                const cardTitle = card.querySelector('.card-title')?.textContent;
+                
+                if (cardTitle === pastCard) {
+                    // Simulate click on past card
+                    card.click();
+                } else if (cardTitle === presentCard && readingState.past) {
+                    // Simulate click on present card if past is already selected
+                    setTimeout(() => card.click(), 500);
+                } else if (cardTitle === futureCard && readingState.past && readingState.present) {
+                    // Simulate click on future card if past and present are already selected
+                    setTimeout(() => card.click(), 1000);
+                }
             });
-    });
+        }, 500);
+        
+        return true; // Indicate that we loaded from URL
+    }
+    
+    return false; // Indicate that we did not load from URL
+}
 
     // Function to create particles
     function createParticles() {
@@ -3541,7 +3596,12 @@ async function exportReading(format) {
     
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', () => {
-        createCards();
+        const loadedFromURL = loadCardsFromURL();
+    
+        // If not loaded from URL, create cards normally
+        if (!loadedFromURL) {
+            createCards();
+        }
         createParticles();
         addPulsingEffects();
         checkTutorialViewed();
