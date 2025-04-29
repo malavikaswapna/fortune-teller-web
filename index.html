@@ -8,6 +8,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
     <style>
         :root {
             --primary-color: #6a5acd;
@@ -982,6 +988,66 @@
 .logout-button:hover {
     background-color: rgba(255, 99, 71, 0.9);
 }
+
+.template-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+#exportPreview {
+  text-align: center;
+}
+
+.export-template {
+  padding: 1rem;
+  border-radius: 10px;
+  max-width: 500px;
+  margin: auto;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+}
+.export-template.mystical {
+  background: linear-gradient(135deg, #6a5acd, #483d8b);
+}
+.export-template.minimal {
+  background: #fff;
+  color: #000;
+  border: 1px solid #ccc;
+}
+.export-template.futuristic {
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #00fff7;
+  font-family: monospace;
+}
+
+.page-one, .page-two {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  padding: 20px;
+}
+
+.page-break {
+  page-break-before: always;
+  break-before: page;
+}
+
+.recommendation {
+  margin: 1rem 0;
+}
+
+.journey-section {
+  margin-top: 1rem;
+}
+
+
     </style>
 </head>
 <body>
@@ -1190,6 +1256,9 @@
                         <button class="button" id="savedReadingsButton">
                             <span class="button-icon">📚</span> My Readings
                         </button>
+                        <button class="button" onclick="openExportModal()">
+                            <span class="button-icon">📄</span> Export Reading
+                        </button>
                     </div>
                     
                     <div class="saved-readings" id="savedReadings">
@@ -1207,6 +1276,25 @@
                             </div>
                         </div>
                     </div>
+                    <div id="exportModal" class="share-options">
+                        <button class="close-share" onclick="closeExportModal()">✕</button>
+                        <h3>Export Your Reading</h3>
+                        <p>Select a template and format:</p>
+                        
+                        <div class="template-options">
+                          <label><input type="radio" name="template" value="mystical" checked> Mystical</label>
+                          <label><input type="radio" name="template" value="minimal"> Minimal</label>
+                          <label><input type="radio" name="template" value="futuristic"> Futuristic</label>
+                        </div>
+                        
+                        <div class="export-buttons">
+                          <button class="button" onclick="exportReading('image')">Export as Image</button>
+                          <button class="button" onclick="exportReading('pdf')">Export as PDF</button>
+                        </div>
+                      
+                        <div id="exportPreview" style="margin-top: 1rem;"></div>
+                        <div id="exportLoading" style="margin-top:1rem; display:none;">Generating export...</div>
+                      </div>                      
                     
                     <footer>
                         <p>🔮 The mystical code knows all, debugs all 🔮</p>
@@ -1631,6 +1719,8 @@
                             alert("Please complete your reading before saving");
                             return;
                         }
+
+                        const interpretationText = document.getElementById('readingContent')?.innerHTML || '';
                         
                         // Create reading object
                         const reading = {
@@ -1650,7 +1740,8 @@
                                 title: readingState.future.card.title,
                                 symbol: readingState.future.card.symbol,
                                 content: readingState.future.card.content
-                            }
+                            },
+                            interpretation: interpretationText
                         };
                         
                         // Save to Firebase
@@ -1779,6 +1870,9 @@
                             
                             // Hide saved readings panel
                             document.getElementById('savedReadings').classList.remove('visible');
+                            document.getElementById('readingContent').innerHTML = reading.interpretation || '';
+                            document.getElementById('readingInterpretation').classList.add('visible');
+
                         }, 500);
                     }
                     
@@ -3177,6 +3271,137 @@ const recommendationsStyle = `
     }
 </style>
 `;
+
+function openExportModal() {
+    const modal = document.getElementById("exportModal");
+    const preview = document.getElementById("exportPreview");
+    const selected = document.querySelector('input[name="template"]:checked')?.value || 'mystical';
+    preview.innerHTML = generateExportHTML(selected);
+    modal.classList.add("visible");
+}
+
+function closeExportModal() {
+    document.getElementById("exportModal").classList.remove("visible");
+}
+
+document.querySelectorAll('input[name="template"]').forEach(input => {
+    input.addEventListener('change', () => {
+        const preview = document.getElementById("exportPreview");
+        preview.innerHTML = generateExportHTML(input.value);
+    });
+});
+
+function generateExportHTML(template) {
+  if (!readingState.past || !readingState.present || !readingState.future) {
+      return '<p>Please complete your reading first.</p>';
+  }
+
+  const past = readingState.past.card;
+  const present = readingState.present.card;
+  const future = readingState.future.card;
+  const journeyText = document.getElementById('readingContent')?.innerHTML || '';
+  const date = new Date().toLocaleString();
+
+  return `
+  <div id="exportContent" class="export-template ${template}">
+    
+    <!-- Page 1 -->
+    <div class="page-one">
+      <h2>Developer's Fortune Reading</h2>
+
+      <h3>Past: ${past.symbol} ${past.title}</h3>
+      <p>${past.content}</p>
+      <h3>Present: ${present.symbol} ${present.title}</h3>
+      <p>${present.content}</p>
+      <h3>Future: ${future.symbol} ${future.title}</h3>
+      <p>${future.content}</p>
+
+      <hr>
+
+      <h3>🧭 Your Development Journey:</h3>
+      <div class="journey-section">
+        ${journeyText}
+      </div>
+    </div>
+
+    <!-- Page Break -->
+    <div class="page-break"></div>
+
+    <!-- Page 2 -->
+    <div class="page-two">
+      <h3>📚 Some recs:</h3>
+      <div class="recommendation">
+        <strong>Book:</strong> The Phoenix Project by Gene Kim<br>
+        <em>A novel about IT, DevOps, and helping your business win</em>
+      </div>
+      <div class="recommendation">
+        <strong>Learning Resource:</strong> GitHub Learning Lab
+      </div>
+      <div class="recommendation">
+        <strong>Programming Technique:</strong> Use feature flags
+      </div>
+      <div class="recommendation">
+        <strong>Career Tip:</strong> Master tools that increase your marketability
+      </div>
+      <div class="timestamp" style="margin-top: 2rem; font-size: 0.8rem; opacity: 0.6;">
+        Generated at: ${date}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+
+async function exportReading(format) {
+    const loading = document.getElementById("exportLoading");
+    loading.style.display = 'block';
+
+    try {
+        const element = document.getElementById("exportContent");
+        const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+
+        if (format === "image") {
+            const a = document.createElement("a");
+            a.href = imgData;
+            a.download = "developer_fortune_reading.png";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        } else if (format === "pdf") {
+  const original = document.getElementById("exportContent");
+  const clone = original.cloneNode(true);
+  clone.style.padding = "20px";
+  clone.style.maxWidth = "600px";
+  clone.style.margin = "auto";
+
+  const container = document.createElement("div");
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
+  const opt = {
+      margin:       0.5,
+      filename:     'developer_fortune_reading.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  await html2pdf().set(opt).from(container).save();
+  container.remove();
+}
+
+
+    } catch (err) {
+        console.error(err);
+        alert("Something went wrong during export.");
+    } finally {
+        loading.style.display = 'none';
+        closeExportModal();
+    }
+}
+
 
     // Insert the styles at the end of the head
     document.head.insertAdjacentHTML('beforeend', recommendationsStyle);
