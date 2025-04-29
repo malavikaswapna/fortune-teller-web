@@ -802,102 +802,6 @@
             #particles-container {
                 opacity: 0.5; /* Reduce opacity on mobile for better readability */
             }
-            #exportModal {
-                width: 90%;
-                left: 5%;
-                right: 5%;
-                transform: translateY(-50%);
-                max-height: 80vh;
-                overflow-y: auto;
-            }
-            .export-buttons {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .export-buttons .button {
-        width: 100%;
-    }
-    
-    /* Ensure Template Options are Clearly Visible */
-    .template-options {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin: 1rem 0;
-        background: rgba(0, 0, 0, 0.2);
-        padding: 0.5rem;
-        border-radius: 5px;
-    }
-    
-    .template-options label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    /* Export preview styling */
-    #exportPreview {
-        max-height: 300px;
-        overflow-y: auto;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 5px;
-        padding: 5px;
-    }
-    
-    /* Fix for PDF export on mobile */
-    .mobile-export-container {
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-        padding: 15px;
-        font-family: Arial, sans-serif;
-    }
-    
-    /* Prevent content from being cut off */
-    .card-section, 
-    .journey-section, 
-    .recommendations-section {
-        page-break-inside: avoid;
-        break-inside: avoid;
-    }
-    
-    /* Better typography for mobile PDFs */
-    .mobile-export-container h2 {
-        font-size: 18px;
-        margin: 10px 0;
-        color: inherit;
-    }
-    
-    .mobile-export-container h3 {
-        font-size: 16px;
-        margin: 10px 0 5px;
-        color: inherit;
-    }
-    
-    .mobile-export-container p {
-        font-size: 14px;
-        line-height: 1.4;
-        margin: 5px 0 10px;
-    }
-    
-    .mobile-export-container hr {
-        margin: 15px 0;
-        border: 0;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.3);
-    }
-    
-    .mobile-export-container .recommendation {
-        margin-bottom: 10px;
-    }
-    
-    .mobile-export-container .timestamp {
-        font-size: 12px;
-        opacity: 0.7;
-        margin-top: 15px;
-        text-align: center;
-    }
         }
         
         @media (max-width: 400px) {
@@ -1205,13 +1109,9 @@
   margin: auto;
   color: #fff;
   font-family: 'Segoe UI', sans-serif;
-  color-adjust: exact;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
 }
 .export-template.mystical {
   background: linear-gradient(135deg, #6a5acd, #483d8b);
-  color: #fff;
 }
 .export-template.minimal {
   background: #fff;
@@ -3510,61 +3410,6 @@ function generateExportHTML(template) {
   }
   
   const date = new Date().toLocaleString();
-  const isMobile = window.innerWidth <= 600;
-
-  // For mobile, we'll create a simpler, single-page layout to avoid page breaks
-  if (isMobile) {
-    return `
-    <div id="exportContent" class="export-template ${template}">
-      <div class="mobile-export-container">
-        <h2>Developer's Fortune Reading</h2>
-
-        <div class="card-section">
-          <h3>Past: ${past.symbol} ${past.title}</h3>
-          <p>${past.content}</p>
-          
-          <h3>Present: ${present.symbol} ${present.title}</h3>
-          <p>${present.content}</p>
-          
-          <h3>Future: ${future.symbol} ${future.title}</h3>
-          <p>${future.content}</p>
-        </div>
-
-        <hr>
-
-        <div class="journey-section">
-          <h3>🧭 Your Development Journey:</h3>
-          ${journeyText}
-        </div>
-
-        <hr>
-
-        <div class="recommendations-section">
-          ${recommendationsText ? recommendationsText : `
-            <h3>📚 Some recs:</h3>
-            <div class="recommendation">
-              <strong>Book:</strong> The Pragmatic Programmer<br>
-              <em>From journeyman to master</em>
-            </div>
-            <div class="recommendation">
-              <strong>Learning Resource:</strong> freeCodeCamp
-            </div>
-            <div class="recommendation">
-              <strong>Programming Technique:</strong> Code reviews
-            </div>
-            <div class="recommendation">
-              <strong>Career Tip:</strong> Build a portfolio
-            </div>
-          `}
-        </div>
-
-        <div class="timestamp" style="margin-top: 1rem; font-size: 0.8rem; opacity: 0.6;">
-          Generated at: ${date}
-        </div>
-      </div>
-    </div>
-    `;
-  }
 
   return `
   <div id="exportContent" class="export-template ${template}">
@@ -3619,181 +3464,57 @@ function generateExportHTML(template) {
 }
 
 
-// Updated export function specifically for mobile PDF issues
-function exportReading(format) {
+
+async function exportReading(format) {
     const loading = document.getElementById("exportLoading");
     loading.style.display = 'block';
-    
-    const isMobile = window.innerWidth <= 600;
 
     try {
         const element = document.getElementById("exportContent");
-        
+        const canvas = await html2canvas(element, { backgroundColor: null, scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+
         if (format === "image") {
-            // For image export
-            const exportOptions = {
-                backgroundColor: null,
-                scale: isMobile ? 1.5 : 2,
-                useCORS: true,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: document.documentElement.offsetWidth,
-                windowHeight: document.documentElement.offsetHeight
-            };
-            
-            html2canvas(element, exportOptions).then(canvas => {
-                const imgData = canvas.toDataURL("image/png");
-                const a = document.createElement("a");
-                a.href = imgData;
-                a.download = "developer_fortune_reading.png";
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                loading.style.display = 'none';
-                closeExportModal();
-            }).catch(err => {
-                console.error("Image export error:", err);
-                alert("Error during image export. Please try again.");
-                loading.style.display = 'none';
-                closeExportModal();
-            });
+            const a = document.createElement("a");
+            a.href = imgData;
+            a.download = "developer_fortune_reading.png";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         } else if (format === "pdf") {
-            // For PDF export - use different approach on mobile
-            if (isMobile) {
-                // Create a clean clone with proper styling for mobile PDF
-                const clone = element.cloneNode(true);
-                
-                // Add mobile-specific styles to the clone
-                const mobileStyles = document.createElement('style');
-                mobileStyles.textContent = `
-                    .mobile-export-container {
-                        padding: 15px;
-                        font-family: Arial, sans-serif;
-                        line-height: 1.4;
-                    }
-                    h2 { font-size: 18px; margin: 10px 0; }
-                    h3 { font-size: 16px; margin: 8px 0; }
-                    p { font-size: 14px; margin: 8px 0; }
-                    hr { margin: 15px 0; border: 0; border-top: 1px solid #ccc; }
-                    .card-section { margin-bottom: 15px; }
-                    .journey-section { margin-bottom: 15px; }
-                    .recommendations-section { margin-bottom: 15px; }
-                    .recommendation { margin-bottom: 10px; }
-                    .timestamp { font-size: 12px; opacity: 0.7; margin-top: 15px; }
-                `;
-                
-                clone.appendChild(mobileStyles);
-                
-                // Position fixed, off-screen for proper rendering
-                clone.style.position = 'fixed';
-                clone.style.top = '0';
-                clone.style.left = '-9999px';
-                clone.style.width = '100%';
-                document.body.appendChild(clone);
-                
-                // Mobile-specific PDF options
-                const opt = {
-                    margin: 0.5,
-                    filename: 'developer_fortune_reading.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 1.5 },
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { avoid: '.mobile-export-container' }
-                };
-                
-                // Generate PDF
-                html2pdf().from(clone).set(opt).save().then(() => {
-                    document.body.removeChild(clone);
-                    loading.style.display = 'none';
-                    closeExportModal();
-                }).catch(err => {
-                    console.error("PDF export error:", err);
-                    document.body.removeChild(clone);
-                    alert("Error during PDF export. Please try again.");
-                    loading.style.display = 'none';
-                    closeExportModal();
-                });
-            } else {
-                // Desktop PDF export - standard approach
-                const opt = {
-                    margin: 0.5,
-                    filename: 'developer_fortune_reading.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                };
-                
-                html2pdf().from(element).set(opt).save().then(() => {
-                    loading.style.display = 'none';
-                    closeExportModal();
-                }).catch(err => {
-                    console.error("PDF export error:", err);
-                    alert("Error during PDF export. Please try again.");
-                    loading.style.display = 'none';
-                    closeExportModal();
-                });
-            }
-        }
+  const original = document.getElementById("exportContent");
+  const clone = original.cloneNode(true);
+  clone.style.padding = "20px";
+  clone.style.maxWidth = "600px";
+  clone.style.margin = "auto";
+
+  const container = document.createElement("div");
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
+  const opt = {
+      margin:       0.5,
+      filename:     'developer_fortune_reading.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  await html2pdf().set(opt).from(container).save();
+  container.remove();
+}
+
+
     } catch (err) {
-        console.error("Export error:", err);
-        alert("Something went wrong during export. Please try again.");
+        console.error(err);
+        alert("Something went wrong during export.");
+    } finally {
         loading.style.display = 'none';
         closeExportModal();
     }
 }
 
-// Add CSS styles for mobile export
-function addMobileExportStyles() {
-    const styleTag = document.createElement('style');
-    styleTag.textContent = `
-        /* Mobile export styles */
-        @media (max-width: 600px) {
-            .export-template {
-                padding: 10px !important;
-                font-size: 14px !important;
-            }
-            
-            .mobile-export-container {
-                width: 100%;
-                box-sizing: border-box;
-            }
-            
-            .export-template h2 {
-                font-size: 18px;
-                margin: 10px 0;
-            }
-            
-            .export-template h3 {
-                font-size: 16px;
-                margin: 8px 0;
-            }
-            
-            .export-template p {
-                font-size: 14px;
-                margin: 6px 0;
-            }
-            
-            .export-template .recommendation {
-                margin-bottom: 8px;
-            }
-            
-            #exportPreview {
-                max-height: 300px;
-                overflow-y: auto;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 5px;
-                padding: 5px;
-                margin-top: 10px;
-            }
-        }
-    `;
-    document.head.appendChild(styleTag);
-}
-    // Call this when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        addMobileExportStyles();
-    });
 
     // Insert the styles at the end of the head
     document.head.insertAdjacentHTML('beforeend', recommendationsStyle);
