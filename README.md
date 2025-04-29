@@ -111,10 +111,14 @@ npx http-server
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="https://i.imgur.com/cAh1xBs.png" alt="Login Window" width="200"/>
-  <img src="https://i.imgur.com/K3bqr1D.png" alt="Card Selection" width="200"/>
-  <img src="https://i.imgur.com/zyGNZTq.png" alt="Reading Interpretation" width="200"/>
-  <img src="https://i.imgur.com/hPc25Rv.png" alt="Export Recs" width="200"/>
+  <p>
+    <img src="https://i.imgur.com/eF8VLYt.jpg" alt="Login Screen" width="400"/>
+    <img src="https://i.imgur.com/MUQCv8E.jpg" alt="Card Selection" width="400"/>
+  </p>
+  <p>
+    <img src="https://i.imgur.com/3nEDcUt.jpg" alt="Reading Interpretation" width="400"/>
+    <img src="https://i.imgur.com/pDdXDPl.jpg" alt="Recommendations" width="400"/>
+  </p>
 </div>
 
 ## 🧠 Behind the Interpretation Engine
@@ -142,7 +146,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🙏 Acknowledgements
 
 - Inspired by tarot reading traditions and modern software development practices
-- Card designs and interpretations created by [Your Name]
+- Card designs and interpretations created by Malavika
 - Special thanks to the developer community for inspiration
 
 ---
