@@ -11,7 +11,6 @@
 
 *Unveil your coding destiny with mystical cards that reveal insights about your past, present, and future as a developer.*
 
-<img src="https://i.imgur.com/LTlGkT4.png" alt="Developer's Fortune Teller Preview" width="600"/>
 
 </div>
 
