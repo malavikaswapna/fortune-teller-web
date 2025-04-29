@@ -752,6 +752,16 @@
                 padding: 0.5rem 0.8rem;
                 font-size: 0.8rem;
             }
+
+            .auth-panel {
+                width: 280px;
+                right: 0.5rem;
+                padding: 1.2rem;
+            }
+
+            .form-group input {
+                padding: 0.6rem;
+            }
         }
 
         /* Auth corner button */
@@ -794,7 +804,7 @@
     background-color: rgba(36, 36, 65, 0.95);
     border: 1px solid var(--primary-color);
     border-radius: 10px;
-    width: 300px;
+    width: 320px; /* Slightly wider */
     padding: 1.5rem;
     z-index: 100;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
@@ -803,6 +813,12 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Make sure all elements inside respect box-sizing */
+.auth-panel * {
+    box-sizing: border-box;
 }
 
 .auth-panel.visible {
@@ -863,6 +879,7 @@
 
 .form-group {
     margin-bottom: 1rem;
+    width: 100%;
 }
 
 .form-group label {
@@ -880,6 +897,12 @@
     background-color: rgba(255, 255, 255, 0.1);
     color: var(--text-color);
     font-size: 0.9rem;
+    max-width: 100%;
+}
+
+
+.auth-content {
+    width: 100%; /* Ensure full width */
 }
 
 .form-group input:focus {
@@ -908,6 +931,56 @@
 
 .auth-footer a:hover {
     text-decoration: underline;
+}
+
+/* User profile styles */
+.user-profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background-color: var(--secondary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-details h3 {
+    margin: 0 0 0.3rem 0;
+    color: var(--text-color);
+}
+
+.user-details p {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.logged-in-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.logout-button {
+    background-color: rgba(255, 99, 71, 0.7);
+}
+
+.logout-button:hover {
+    background-color: rgba(255, 99, 71, 0.9);
 }
     </style>
 </head>
@@ -1010,26 +1083,27 @@
                 <div class="auth-panel" id="authPanel">
                     <button class="close-button" id="closeAuthPanel">✕</button>
                     
-                    <div class="auth-tabs">
-                        <button class="auth-tab active" id="signInTab">Sign In</button>
-                        <button class="auth-tab" id="signUpTab">Sign Up</button>
-                    </div>
+                    <div id="authNotLoggedIn">
+                        <div class="auth-tabs">
+                            <button class="auth-tab active" id="signInTab">Sign In</button>
+                            <button class="auth-tab" id="signUpTab">Sign Up</button>
+                        </div>
                     
-                    <div class="auth-content" id="signInContent">
-                        <h3>Welcome Back</h3>
-                        <form id="signInForm">
-                            <div class="form-group">
-                                <label for="signInEmail">Email</label>
-                                <input type="email" id="signInEmail" required placeholder="your@email.com">
-                            </div>
-                            <div class="form-group">
-                                <label for="signInPassword">Password</label>
-                                <input type="password" id="signInPassword" required placeholder="Your password">
-                            </div>
-                            <button type="submit" class="button auth-submit">
-                                <span class="button-icon">🔑</span> Sign In
-                            </button>
-                        </form>
+                        <div class="auth-content" id="signInContent">
+                            <h3>Welcome Back</h3>
+                            <form id="signInForm">
+                                <div class="form-group">
+                                    <label for="signInEmail">Email</label>
+                                    <input type="email" id="signInEmail" required placeholder="your@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="signInPassword">Password</label>
+                                    <input type="password" id="signInPassword" required placeholder="Your password">
+                                </div>
+                                <button type="submit" class="button auth-submit">
+                                    <span class="button-icon">🔑</span> Sign In
+                                </button>
+                            </form>
                         <div class="auth-footer">
                             Don't have an account? <a href="#" id="switchToSignUp">Sign up</a>
                         </div>
@@ -1059,7 +1133,28 @@
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- This section shows when user IS logged in -->
+                <div id="authLoggedIn" style="display: none;">
+                    <div class="user-profile">
+                        <div class="user-avatar">👤</div>
+                        <div class="user-details">
+                            <h3 id="userDisplayName">User</h3>
+                            <p id="userEmail">user@example.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="logged-in-actions">
+                        <button class="button auth-submit" id="viewReadingsButton">
+                            <span class="button-icon">📚</span> My Readings
+                        </button>
+                        <button class="button auth-submit logout-button" id="logoutButton">
+                            <span class="button-icon">🚪</span> Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
                 <div class="content-container">
                     <header>
                         <h1>Developer's Fortune Teller</h1>
@@ -1504,24 +1599,18 @@
                         }
                     }
                     
-                    // Function to show reading interpretation
                     function showInterpretation() {
                         const interpretation = document.getElementById('readingInterpretation');
                         const content = document.getElementById('readingContent');
-                        
+    
                         if (readingState.past && readingState.present && readingState.future) {
                             const pastCard = readingState.past.card;
                             const presentCard = readingState.present.card;
                             const futureCard = readingState.future.card;
-                            
-                            // Create interpretation based on the cards drawn
-                            content.innerHTML = `
-                                <p>Your developer journey reflects an interesting path. In your past, <strong>${pastCard.title}</strong> shows that ${pastCard.content.toLowerCase()} This has shaped your approach to coding challenges.</p>
-                                <p>Currently, <strong>${presentCard.title}</strong> influences your work. ${presentCard.content} This represents your current coding environment and challenges.</p>
-                                <p>Looking to your future, <strong>${futureCard.title}</strong> suggests ${futureCard.content.toLowerCase()} This will be key to your growth as a developer.</p>
-                                <p>Together, these cards suggest you should focus on combining the wisdom from your past experience with your present skills, while embracing the change that will lead to your future success.</p>
-                            `;
-                            
+        
+                            // Use the dynamic interpretation engine to generate reading
+                            content.innerHTML = generateDynamicInterpretation(pastCard, presentCard, futureCard);
+        
                             interpretation.classList.add('visible');
                         }
                     }
@@ -1884,8 +1973,7 @@
         }, 2000);
     }
     
-    // Auth panel functionality
-const authToggleButton = document.getElementById('authToggleButton');
+    const authToggleButton = document.getElementById('authToggleButton');
 const authPanel = document.getElementById('authPanel');
 const closeAuthPanel = document.getElementById('closeAuthPanel');
 const signInTab = document.getElementById('signInTab');
@@ -1998,31 +2086,1100 @@ function updateAuthStatus(signedIn) {
     }
 }
 
-// Add this to your auth state listener
+// Updated auth state change listener
 auth.onAuthStateChanged(user => {
     const loginPrompt = document.getElementById('loginPrompt');
+    const authNotLoggedIn = document.getElementById('authNotLoggedIn');
+    const authLoggedIn = document.getElementById('authLoggedIn');
     
     if (user) {
         // User is signed in
         loginPrompt.style.display = 'none';
+        
+        // Update auth panel
+        authNotLoggedIn.style.display = 'none';
+        authLoggedIn.style.display = 'block';
+        
+        // Update user info
+        const username = user.email.split('@')[0];
+        document.getElementById('userDisplayName').textContent = username;
+        document.getElementById('userEmail').textContent = user.email;
+        
+        // Update button in corner
         updateAuthStatus(true);
+        
+        // Load readings
         loadSavedReadings();
     } else {
         // User is signed out
         loginPrompt.style.display = 'block';
+        
+        // Update auth panel
+        authNotLoggedIn.style.display = 'block';
+        authLoggedIn.style.display = 'none';
+        
+        // Update button in corner
         updateAuthStatus(false);
     }
 });
 
-// Sign out functionality (add this to the auth button)
-authToggleButton.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (auth.currentUser) {
-        if (confirm("Sign out?")) {
-            auth.signOut();
+// Add logout functionality
+document.getElementById('logoutButton').addEventListener('click', () => {
+    auth.signOut()
+        .then(() => {
+            // Sign-out successful
+            authPanel.classList.remove('visible');
+        })
+        .catch((error) => {
+            console.error("Sign out error:", error);
+        });
+});
+
+// Make "My Readings" button work
+document.getElementById('viewReadingsButton').addEventListener('click', () => {
+    document.getElementById('savedReadings').classList.add('visible');
+    loadSavedReadings();
+    authPanel.classList.remove('visible');
+});
+
+// Enhanced Fortune Cards with categories, themes, and compatibility info
+const enhancedFortuneCards = [
+    {
+        title: "The Algorithm",
+        symbol: "⚙️",
+        content: "An elegant solution will bring unexpected recognition.",
+        category: "technical",
+        theme: "efficiency",
+        keywords: ["solution", "recognition", "elegance", "optimization"],
+        compatibleWith: ["The Debugger", "The Documentation", "The Prototype"],
+        conflictsWith: ["The Exception", "The Merge Conflict"]
+    },
+    {
+        title: "The Loop",
+        symbol: "♾️",
+        content: "Break free from circular patterns to find innovation.",
+        category: "pattern",
+        theme: "innovation",
+        keywords: ["patterns", "innovation", "change", "breaking free"],
+        compatibleWith: ["The Variable", "The Update", "The Recursion"],
+        conflictsWith: ["The Legacy Code", "The Firewall"]
+    },
+    {
+        title: "The Exception",
+        symbol: "⚠️",
+        content: "A surprising error will lead to your best discovery.",
+        category: "challenge",
+        theme: "discovery",
+        keywords: ["error", "surprise", "discovery", "setback", "opportunity"],
+        compatibleWith: ["The Debugger", "The Variable", "The Repository"],
+        conflictsWith: ["The Algorithm", "The Deployment"]
+    },
+    {
+        title: "The Legacy Code",
+        symbol: "📜",
+        content: "Ancient wisdom lurks in deprecated methods.",
+        category: "pattern",
+        theme: "wisdom",
+        keywords: ["wisdom", "history", "legacy", "foundation", "tradition"],
+        compatibleWith: ["The Documentation", "The Repository", "The Stack"],
+        conflictsWith: ["The Update", "The Cloud", "The Loop"]
+    },
+    {
+        title: "The Deployment",
+        symbol: "🚀",
+        content: "Your next launch will exceed all expectations.",
+        category: "milestone",
+        theme: "success",
+        keywords: ["launch", "expectation", "success", "achievement", "delivery"],
+        compatibleWith: ["The Cloud", "The API", "The Algorithm"],
+        conflictsWith: ["The Exception", "The Merge Conflict"]
+    },
+    {
+        title: "The Recursion",
+        symbol: "🌀",
+        content: "The solution is within the function itself.",
+        category: "technical",
+        theme: "introspection",
+        keywords: ["solution", "self-reference", "introspection", "depth"],
+        compatibleWith: ["The Loop", "The Algorithm", "The Prototype"],
+        conflictsWith: ["The Stack", "The Standup"]
+    },
+    {
+        title: "The Debugger",
+        symbol: "🔍",
+        content: "Step by step, a hidden truth will be revealed.",
+        category: "process",
+        theme: "discovery",
+        keywords: ["truth", "revelation", "patience", "investigation", "problem-solving"],
+        compatibleWith: ["The Exception", "The Algorithm", "The Documentation"],
+        conflictsWith: ["The Update", "The Cloud"]
+    },
+    {
+        title: "The Framework",
+        symbol: "🏗️",
+        content: "Don't let your tools constrain your creativity.",
+        category: "tool",
+        theme: "creativity",
+        keywords: ["tools", "constraints", "creativity", "foundation", "structure"],
+        compatibleWith: ["The IDE", "The Repository", "The Prototype"],
+        conflictsWith: ["The Legacy Code", "The Firewall"]
+    },
+    {
+        title: "The Callback",
+        symbol: "📞",
+        content: "An old connection returns with new opportunities.",
+        category: "relationship",
+        theme: "opportunity",
+        keywords: ["connection", "opportunity", "return", "past", "network"],
+        compatibleWith: ["The API", "The Repository", "The Loop"],
+        conflictsWith: ["The Firewall", "The Stack"]
+    },
+    {
+        title: "The Merge Conflict",
+        symbol: "🔀",
+        content: "Integrate competing ideas with careful balance.",
+        category: "challenge",
+        theme: "balance",
+        keywords: ["integration", "competition", "balance", "collaboration", "resolution"],
+        compatibleWith: ["The Standup", "The Variable", "The Documentation"],
+        conflictsWith: ["The Algorithm", "The Deployment"]
+    },
+    {
+        title: "The Stack",
+        symbol: "📚",
+        content: "Clear technical debt before adding new features.",
+        category: "process",
+        theme: "foundation",
+        keywords: ["debt", "foundation", "priority", "organization", "structure"],
+        compatibleWith: ["The Legacy Code", "The Documentation", "The IDE"],
+        conflictsWith: ["The Recursion", "The Callback"]
+    },
+    {
+        title: "The Variable",
+        symbol: "🔄",
+        content: "Adaptability will be your greatest strength.",
+        category: "attribute",
+        theme: "adaptability",
+        keywords: ["adaptability", "strength", "flexibility", "change", "versatility"],
+        compatibleWith: ["The Loop", "The Exception", "The Update"],
+        conflictsWith: ["The Firewall", "The Legacy Code"]
+    },
+    {
+        title: "The Documentation",
+        symbol: "📝",
+        content: "Your willingness to explain will return tenfold.",
+        category: "communication",
+        theme: "clarity",
+        keywords: ["explanation", "clarity", "teaching", "sharing", "communication"],
+        compatibleWith: ["The Debugger", "The Stack", "The Algorithm"],
+        conflictsWith: ["The IDE", "The Cloud"]
+    },
+    {
+        title: "The Repository",
+        symbol: "🗃️",
+        content: "Past work contains treasures waiting to be found.",
+        category: "resources",
+        theme: "discovery",
+        keywords: ["treasure", "past", "rediscovery", "history", "resource"],
+        compatibleWith: ["The Legacy Code", "The Framework", "The Callback"],
+        conflictsWith: ["The Update", "The Cloud"]
+    },
+    {
+        title: "The Firewall",
+        symbol: "🔒",
+        content: "Your defensive coding will save the day.",
+        category: "security",
+        theme: "protection",
+        keywords: ["defense", "protection", "security", "caution", "prevention"],
+        compatibleWith: ["The Documentation", "The IDE", "The Stack"],
+        conflictsWith: ["The Loop", "The Variable", "The Callback"]
+    },
+    {
+        title: "The Cloud",
+        symbol: "☁️",
+        content: "Think beyond local to scale your impact.",
+        category: "scalability",
+        theme: "expansion",
+        keywords: ["scale", "impact", "expansion", "reach", "growth"],
+        compatibleWith: ["The Deployment", "The API", "The Update"],
+        conflictsWith: ["The Legacy Code", "The Repository", "The Debugger"]
+    },
+    {
+        title: "The Standup",
+        symbol: "👥",
+        content: "Communication, not code, is your next challenge.",
+        category: "communication",
+        theme: "collaboration",
+        keywords: ["communication", "challenge", "collaboration", "teamwork", "leadership"],
+        compatibleWith: ["The Merge Conflict", "The Documentation", "The Callback"],
+        conflictsWith: ["The Recursion", "The IDE"]
+    },
+    {
+        title: "The API",
+        symbol: "🔌",
+        content: "New connections will open unexpected doors.",
+        category: "integration",
+        theme: "opportunity",
+        keywords: ["connection", "opportunity", "integration", "bridge", "interface"],
+        compatibleWith: ["The Cloud", "The Callback", "The Deployment"],
+        conflictsWith: ["The Firewall", "The Legacy Code"]
+    },
+    {
+        title: "The IDE",
+        symbol: "💻",
+        content: "Master your environment to master your craft.",
+        category: "tool",
+        theme: "mastery",
+        keywords: ["environment", "mastery", "tools", "control", "efficiency"],
+        compatibleWith: ["The Framework", "The Firewall", "The Stack"],
+        conflictsWith: ["The Documentation", "The Standup"]
+    },
+    {
+        title: "The Prototype",
+        symbol: "🔬",
+        content: "First versions contain the seeds of brilliance.",
+        category: "creation",
+        theme: "innovation",
+        keywords: ["creation", "beginnings", "brilliance", "potential", "experimentation"],
+        compatibleWith: ["The Algorithm", "The Recursion", "The Framework"],
+        conflictsWith: ["The Deployment", "The Cloud"]
+    },
+    {
+        title: "The Update",
+        symbol: "⬆️",
+        content: "Embrace new versions to avoid stagnation.",
+        category: "growth",
+        theme: "progress",
+        keywords: ["new", "change", "progress", "growth", "evolution"],
+        compatibleWith: ["The Cloud", "The Variable", "The Loop"],
+        conflictsWith: ["The Legacy Code", "The Repository", "The Debugger"]
+    }
+];
+
+// Meaning templates for various card positions
+const positionMeanings = {
+    past: {
+        technical: "Your foundation in %s has shaped your approach to development.",
+        pattern: "The %s patterns you've established continue to influence your work.",
+        challenge: "Overcoming %s challenges has strengthened your problem-solving abilities.",
+        milestone: "Previous achievements with %s have boosted your confidence.",
+        process: "Your experience with %s methodologies continues to guide you.",
+        tool: "Your early mastery of %s tools has accelerated your growth.",
+        relationship: "Past collaborations through %s connections have expanded your network.",
+        attribute: "Your natural %s abilities have served you well throughout your journey.",
+        communication: "Your history of %s has built your reputation in the community.",
+        resources: "The %s resources you've accumulated remain valuable assets.",
+        security: "Your vigilance with %s practices has prevented major setbacks.",
+        scalability: "Early experiences with %s thinking prepared you for bigger challenges.",
+        integration: "Previous work on %s systems gave you valuable architectural insight.",
+        creation: "Your earlier %s projects demonstrated your creative potential.",
+        growth: "Your willingness to embrace %s has kept you relevant in this field."
+    },
+    present: {
+        technical: "You're currently facing %s challenges that require elegant solutions.",
+        pattern: "Your ability to recognize %s patterns is your current advantage.",
+        challenge: "Current %s obstacles are testing and refining your skills.",
+        milestone: "You're approaching a significant %s milestone in your development journey.",
+        process: "Improving your %s workflow is now your primary focus.",
+        tool: "Mastering new %s tools is opening doors in your current role.",
+        relationship: "Your %s connections are crucial to your current projects.",
+        attribute: "Your %s characteristics are what make you valuable to your team right now.",
+        communication: "Your %s abilities are being recognized by those around you.",
+        resources: "Your current work benefits from the %s knowledge you've collected.",
+        security: "Your attention to %s details is preventing problems before they arise.",
+        scalability: "%s considerations are becoming increasingly important in your work.",
+        integration: "Your expertise in %s systems makes you a valuable connector.",
+        creation: "Your %s innovations are setting you apart from others.",
+        growth: "Your current %s trajectory is accelerating your development."
+    },
+    future: {
+        technical: "Deepening your %s expertise will lead to significant breakthroughs.",
+        pattern: "Breaking free from limiting %s patterns will accelerate your growth.",
+        challenge: "Future %s challenges will reveal new strengths you didn't know you had.",
+        milestone: "An upcoming %s achievement will mark a turning point in your career.",
+        process: "Refining your %s methodologies will streamline your future work.",
+        tool: "Investing in new %s technologies will pay dividends in the long term.",
+        relationship: "New %s connections will transform your professional network.",
+        attribute: "Developing your %s qualities will set you apart from your peers.",
+        communication: "Your future success depends on effective %s with diverse audiences.",
+        resources: "The %s resources you're building now will support your future goals.",
+        security: "Your commitment to %s will become increasingly valuable in uncertain times.",
+        scalability: "Your vision for %s will determine how far your influence extends.",
+        integration: "Your ability to create %s between systems will be your unique value.",
+        creation: "Your %s mindset will lead to your most significant innovations.",
+        growth: "Embracing %s will keep you at the forefront of your field."
+    }
+};
+
+// Relationship analysis templates
+const relationshipAnalysis = {
+    compatible: [
+        "The harmony between %s and %s creates a powerful synergy in your journey.",
+        "The complementary energies of %s and %s amplify your strengths.",
+        "The alignment of %s with %s creates a clear path forward.",
+        "The combination of %s and %s suggests you have both vision and practical skills.",
+        "The resonance between %s and %s indicates a balanced approach to technical challenges."
+    ],
+    conflicting: [
+        "The tension between %s and %s presents a creative challenge to overcome.",
+        "The opposing forces of %s and %s require careful integration in your work.",
+        "The contrast between %s and %s highlights an area where balance is needed.",
+        "The friction between %s and %s suggests a need to reconcile different approaches.",
+        "The conflict between %s and %s points to a decision point in your development path."
+    ],
+    neutral: [
+        "The connection between %s and %s brings interesting dimensions to your journey.",
+        "The interplay of %s with %s offers unique perspectives on your development.",
+        "The relationship between %s and %s highlights the diverse aspects of your technical identity.",
+        "The pairing of %s with %s suggests a multifaceted approach to your craft.",
+        "The juxtaposition of %s and %s reflects the complexity of your developer path."
+    ]
+};
+
+// Advice templates based on card combinations
+const adviceTemplates = {
+    // Technical Focus
+    technical_technical: "Deepen your technical expertise by connecting theory with practical implementation.",
+    technical_communication: "Balance your technical skills with clear communication about your solutions.",
+    technical_pattern: "Look for elegant patterns that can simplify complex technical challenges.",
+    technical_challenge: "Approach technical obstacles as opportunities for innovation rather than barriers.",
+    technical_growth: "Continuously evolve your technical toolkit to stay ahead of industry demands.",
+    
+    // Growth Focus
+    growth_technical: "Invest in learning technologies that will still be relevant five years from now.",
+    growth_pattern: "Break free from outdated practices while preserving the wisdom they contain.",
+    growth_challenge: "Seek challenges that stretch your abilities but are still within reach.",
+    growth_communication: "Share your growth journey to inspire others and solidify your learning.",
+    growth_relationship: "Surround yourself with people who push you to grow and evolve.",
+    
+    // Challenge Focus
+    challenge_technical: "Tackle difficult technical problems to stand out in your field.",
+    challenge_growth: "View each obstacle as a stepping stone rather than a stumbling block.",
+    challenge_communication: "Document your problem-solving process to help others facing similar challenges.",
+    challenge_security: "Anticipate potential issues before they become critical problems.",
+    challenge_creation: "Use constraints as creativity catalysts rather than limitations.",
+    
+    // Relationship Focus
+    relationship_communication: "Build your network through genuine knowledge sharing and collaboration.",
+    relationship_integration: "Position yourself as a connector between different technical domains.",
+    relationship_scalability: "Cultivate relationships that can scale as your career evolves.",
+    relationship_security: "Establish trusted partnerships while maintaining appropriate boundaries.",
+    relationship_growth: "Invest in relationships that challenge you to improve and evolve.",
+    
+    // Communication Focus
+    communication_technical: "Translate complex concepts into accessible explanations for diverse audiences.",
+    communication_relationship: "Listen as much as you speak to build deeper technical understanding.",
+    communication_challenge: "Address conflicts directly with clear, constructive communication.",
+    communication_tool: "Master the tools that help you convey your ideas more effectively.",
+    communication_creation: "Document your creative process to inspire and guide others.",
+    
+    // Default
+    default: "Balance technical excellence with human connection, and disciplined practice with creative exploration."
+};
+
+// Theme-based insights
+const themeInsights = {
+    efficiency: "Your path emphasizes creating maximum impact with minimal waste.",
+    innovation: "Creative thinking is your superpower in technical problem-solving.",
+    discovery: "Your journey is one of continuous exploration and uncovering hidden knowledge.",
+    wisdom: "You bring valuable perspective from past experiences to new challenges.",
+    success: "Achievement and recognition are significant motivators in your work.",
+    introspection: "Your ability to look inward helps you optimize your approaches.",
+    creativity: "Thinking outside conventional boundaries drives your best work.",
+    opportunity: "You excel at recognizing and capitalizing on promising possibilities.",
+    balance: "Finding harmony among competing priorities is your special talent.",
+    foundation: "Building solid groundwork before expansion ensures lasting success.",
+    adaptability: "Your flexibility in changing circumstances is a tremendous asset.",
+    clarity: "Making the complex understandable is one of your greatest contributions.",
+    protection: "Your foresight in preventing problems is often underappreciated.",
+    expansion: "Thinking at scale differentiates your approach from others.",
+    collaboration: "Your ability to work with diverse teams multiplies your impact.",
+    mastery: "Deep expertise in your chosen areas sets you apart from generalists.",
+    progress: "Continuous forward momentum defines your professional journey."
+};
+
+// Dynamic interpretation engine
+// Modify the generateDynamicInterpretation function to include recommendations
+function generateDynamicInterpretation(pastCard, presentCard, futureCard) {
+    // Find enhanced card data
+    const pastEnhanced = enhancedFortuneCards.find(card => card.title === pastCard.title);
+    const presentEnhanced = enhancedFortuneCards.find(card => card.title === presentCard.title);
+    const futureEnhanced = enhancedFortuneCards.find(card => card.title === futureCard.title);
+    
+    if (!pastEnhanced || !presentEnhanced || !futureEnhanced) {
+        return generateFallbackInterpretation(pastCard, presentCard, futureCard) + generateFallbackRecommendations();
+    }
+    
+    // Generate position-specific interpretations
+    const pastInterpretation = positionMeanings.past[pastEnhanced.category].replace('%s', pastEnhanced.theme);
+    const presentInterpretation = positionMeanings.present[presentEnhanced.category].replace('%s', presentEnhanced.theme);
+    const futureInterpretation = positionMeanings.future[futureEnhanced.category].replace('%s', futureEnhanced.theme);
+    
+    // Analyze relationships between cards
+    const pastPresentRelationship = analyzeRelationship(pastEnhanced, presentEnhanced);
+    const presentFutureRelationship = analyzeRelationship(presentEnhanced, futureEnhanced);
+    const pastFutureRelationship = analyzeRelationship(pastEnhanced, futureEnhanced);
+    
+    // Generate relationship insights
+    const relationships = [];
+    relationships.push(formatRelationship(pastPresentRelationship, pastEnhanced.title, presentEnhanced.title));
+    
+    // We'll only include one additional relationship to avoid making the reading too long
+    if (Math.random() > 0.5) {
+        relationships.push(formatRelationship(presentFutureRelationship, presentEnhanced.title, futureEnhanced.title));
+    } else {
+        relationships.push(formatRelationship(pastFutureRelationship, pastEnhanced.title, futureEnhanced.title));
+    }
+    
+    // Generate personalized advice based on card combinations
+    const advice = getAdvice(pastEnhanced, presentEnhanced, futureEnhanced);
+    
+    // Get a key theme insight
+    const dominantTheme = getDominantTheme(pastEnhanced, presentEnhanced, futureEnhanced);
+    const themeInsight = themeInsights[dominantTheme] || themeInsights.adaptability;
+    
+    // Generate personalized recommendations
+    const recommendations = generatePersonalizedRecommendations(pastCard, presentCard, futureCard);
+    
+    // Build the complete interpretation with recommendations
+    const interpretation = `
+        <p><strong>🔮 Your Developer's Fortune Reading 🔮</strong></p>
+        
+        <p><strong>Past: ${pastEnhanced.title} ${pastEnhanced.symbol}</strong><br>
+        ${pastInterpretation} ${pastCard.content}</p>
+        
+        <p><strong>Present: ${presentEnhanced.title} ${presentEnhanced.symbol}</strong><br>
+        ${presentInterpretation} ${presentCard.content}</p>
+        
+        <p><strong>Future: ${futureEnhanced.title} ${futureEnhanced.symbol}</strong><br>
+        ${futureInterpretation} ${futureCard.content}</p>
+        
+        <p><strong>Card Relationships:</strong><br>
+        ${relationships.join(' ')}</p>
+        
+        <p><strong>Your Developer Path:</strong><br>
+        ${themeInsight} ${advice}</p>
+        
+        <p><strong>Key Focus:</strong><br>
+        ${getKeyFocus(pastEnhanced, presentEnhanced, futureEnhanced)}</p>
+        
+        ${recommendations}
+    `;
+    
+    return interpretation;
+}
+
+// Helper functions for the interpretation engine
+function analyzeRelationship(card1, card2) {
+    if (card1.compatibleWith.includes(card2.title)) {
+        return "compatible";
+    } else if (card1.conflictsWith.includes(card2.title)) {
+        return "conflicting";
+    } else {
+        return "neutral";
+    }
+}
+
+function formatRelationship(relationshipType, card1Title, card2Title) {
+    const templates = relationshipAnalysis[relationshipType];
+    const template = templates[Math.floor(Math.random() * templates.length)];
+    return template.replace('%s', card1Title).replace('%s', card2Title);
+}
+
+function getAdvice(pastCard, presentCard, futureCard) {
+    // Try to find specific advice based on card category combinations
+    const combinations = [
+        `${pastCard.category}_${presentCard.category}`,
+        `${presentCard.category}_${futureCard.category}`,
+        `${pastCard.category}_${futureCard.category}`
+    ];
+    
+    for (const combo of combinations) {
+        if (adviceTemplates[combo]) {
+            return adviceTemplates[combo];
         }
     }
-});
+    
+    // Fall back to generic advice
+    return adviceTemplates.default;
+}
+
+function getDominantTheme(pastCard, presentCard, futureCard) {
+    // Future has highest weight, then present, then past
+    const themes = [
+        { theme: pastCard.theme, weight: 1 },
+        { theme: presentCard.theme, weight: 2 },
+        { theme: futureCard.theme, weight: 3 }
+    ];
+    
+    // If any themes repeat, they become dominant
+    const themeCount = {};
+    themes.forEach(item => {
+        themeCount[item.theme] = (themeCount[item.theme] || 0) + item.weight;
+    });
+    
+    let dominantTheme = '';
+    let highestWeight = 0;
+    
+    for (const [theme, weight] of Object.entries(themeCount)) {
+        if (weight > highestWeight) {
+            highestWeight = weight;
+            dominantTheme = theme;
+        }
+    }
+    
+    return dominantTheme;
+}
+
+function getKeyFocus(pastCard, presentCard, futureCard) {
+    // Identify keywords that appear in multiple cards
+    const allKeywords = [
+        ...pastCard.keywords,
+        ...presentCard.keywords,
+        ...futureCard.keywords
+    ];
+    
+    const keywordCount = {};
+    allKeywords.forEach(keyword => {
+        keywordCount[keyword] = (keywordCount[keyword] || 0) + 1;
+    });
+    
+    // Find repeated keywords
+    const repeatedKeywords = Object.entries(keywordCount)
+        .filter(([keyword, count]) => count > 1)
+        .map(([keyword]) => keyword);
+    
+    if (repeatedKeywords.length > 0) {
+        // Format the repeated keywords as a focus statement
+        const keyword = repeatedKeywords[Math.floor(Math.random() * repeatedKeywords.length)];
+        
+        const focusStatements = [
+            `Focus on ${keyword} as a central theme in your developer journey.`,
+            `Your cards repeatedly highlight ${keyword} as an area deserving special attention.`,
+            `The consistent presence of ${keyword} in your reading suggests this is your key strength to leverage.`,
+            `${keyword.charAt(0).toUpperCase() + keyword.slice(1)} emerges as a critical factor in your technical evolution.`,
+            `Pay particular attention to how ${keyword} manifests in different aspects of your work.`
+        ];
+        
+        return focusStatements[Math.floor(Math.random() * focusStatements.length)];
+    } else {
+        // If no keywords repeat, focus on the future card's primary theme
+        return `Your journey points toward ${futureCard.theme} as your next growth area. Embrace this direction to unlock your potential.`;
+    }
+}
+
+// Fallback interpretation for any issues
+function generateFallbackInterpretation(pastCard, presentCard, futureCard) {
+    return `
+        <p>Your developer journey reflects an interesting path. In your past, <strong>${pastCard.title}</strong> shows that ${pastCard.content.toLowerCase()} This has shaped your approach to coding challenges.</p>
+        <p>Currently, <strong>${presentCard.title}</strong> influences your work. ${presentCard.content} This represents your current coding environment and challenges.</p>
+        <p>Looking to your future, <strong>${futureCard.title}</strong> suggests ${futureCard.content.toLowerCase()} This will be key to your growth as a developer.</p>
+        <p>Together, these cards suggest you should focus on combining the wisdom from your past experience with your present skills, while embracing the change that will lead to your future success.</p>
+    `;
+}
+
+// Resource database organized by themes and categories
+const recommendationDatabase = {
+    // Books by theme
+    books: {
+        efficiency: [
+            { title: "Clean Code", author: "Robert C. Martin", description: "Principles for writing maintainable, efficient code" },
+            { title: "Refactoring", author: "Martin Fowler", description: "Improving the design of existing code" },
+            { title: "The Art of Computer Programming", author: "Donald Knuth", description: "Fundamental algorithms and optimization techniques" }
+        ],
+        innovation: [
+            { title: "The Innovator's Dilemma", author: "Clayton Christensen", description: "How new technologies cause great firms to fail" },
+            { title: "Thinking, Fast and Slow", author: "Daniel Kahneman", description: "Understanding how we think and make decisions" },
+            { title: "Creative Selection", author: "Ken Kocienda", description: "Inside Apple's design process" }
+        ],
+        discovery: [
+            { title: "The Pragmatic Programmer", author: "Andrew Hunt & David Thomas", description: "From journeyman to master" },
+            { title: "Debugging", author: "David J. Agans", description: "The 9 indispensable rules for finding even the most elusive software and hardware problems" },
+            { title: "Software Creativity 2.0", author: "Robert L. Glass", description: "Exploration of software development as a creative process" }
+        ],
+        wisdom: [
+            { title: "The Mythical Man-Month", author: "Frederick P. Brooks Jr.", description: "Essays on software engineering" },
+            { title: "Coders at Work", author: "Peter Seibel", description: "Reflections on the craft of programming" },
+            { title: "Domain-Driven Design", author: "Eric Evans", description: "Tackling complexity in the heart of software" }
+        ],
+        success: [
+            { title: "The Phoenix Project", author: "Gene Kim", description: "A novel about IT, DevOps, and helping your business win" },
+            { title: "Accelerate", author: "Nicole Forsgren, Jez Humble & Gene Kim", description: "Building and scaling high performing technology organizations" },
+            { title: "The Unicorn Project", author: "Gene Kim", description: "A novel about developers, digital disruption, and thriving in the age of data" }
+        ],
+        introspection: [
+            { title: "The Passionate Programmer", author: "Chad Fowler", description: "Creating a remarkable career in software development" },
+            { title: "Apprenticeship Patterns", author: "Dave Hoover & Adewale Oshineye", description: "Guidance for the aspiring software craftsman" },
+            { title: "Algorithms to Live By", author: "Brian Christian & Tom Griffiths", description: "The computer science of human decisions" }
+        ],
+        creativity: [
+            { title: "Creative Selection", author: "Ken Kocienda", description: "Inside Apple's design process" },
+            { title: "The Art of Innovation", author: "Tom Kelley", description: "Lessons in creativity from IDEO" },
+            { title: "Inspired", author: "Marty Cagan", description: "How to create tech products customers love" }
+        ],
+        opportunity: [
+            { title: "Hooked", author: "Nir Eyal", description: "How to build habit-forming products" },
+            { title: "Zero to One", author: "Peter Thiel", description: "Notes on startups, or how to build the future" },
+            { title: "The Mom Test", author: "Rob Fitzpatrick", description: "How to talk to customers and learn if your business is a good idea" }
+        ],
+        balance: [
+            { title: "The Healthy Programmer", author: "Joe Kutner", description: "Get fit, feel better, and keep coding" },
+            { title: "Essentialism", author: "Greg McKeown", description: "The disciplined pursuit of less" },
+            { title: "The Phoenix Project", author: "Gene Kim", description: "A novel about IT, DevOps, and helping your business win" }
+        ],
+        foundation: [
+            { title: "Code Complete", author: "Steve McConnell", description: "A practical handbook of software construction" },
+            { title: "Design Patterns", author: "Erich Gamma et al.", description: "Elements of reusable object-oriented software" },
+            { title: "Clean Architecture", author: "Robert C. Martin", description: "A craftsman's guide to software structure and design" }
+        ],
+        adaptability: [
+            { title: "The Lean Startup", author: "Eric Ries", description: "How today's entrepreneurs use continuous innovation" },
+            { title: "Antifragile", author: "Nassim Nicholas Taleb", description: "Things that gain from disorder" },
+            { title: "Agile Software Development", author: "Robert C. Martin", description: "Principles, patterns, and practices" }
+        ],
+        clarity: [
+            { title: "Don't Make Me Think", author: "Steve Krug", description: "A common sense approach to web usability" },
+            { title: "Writing Solid Code", author: "Steve Maguire", description: "Microsoft's techniques for developing bug-free C programs" },
+            { title: "The Design of Everyday Things", author: "Don Norman", description: "How good design happens" }
+        ],
+        protection: [
+            { title: "Web Application Security", author: "Andrew Hoffman", description: "A beginner's guide" },
+            { title: "The Tangled Web", author: "Michal Zalewski", description: "A guide to securing modern web applications" },
+            { title: "Threat Modeling", author: "Adam Shostack", description: "Designing for security" }
+        ],
+        expansion: [
+            { title: "Building Microservices", author: "Sam Newman", description: "Designing fine-grained systems" },
+            { title: "Designing Distributed Systems", author: "Brendan Burns", description: "Patterns and paradigms for scalable services" },
+            { title: "Site Reliability Engineering", author: "Niall Richard Murphy et al.", description: "How Google runs production systems" }
+        ],
+        collaboration: [
+            { title: "Team Geek", author: "Brian W. Fitzpatrick & Ben Collins-Sussman", description: "A software developer's guide to working well with others" },
+            { title: "Crucial Conversations", author: "Kerry Patterson et al.", description: "Tools for talking when stakes are high" },
+            { title: "The Five Dysfunctions of a Team", author: "Patrick Lencioni", description: "A leadership fable" }
+        ],
+        mastery: [
+            { title: "Peak", author: "Anders Ericsson & Robert Pool", description: "Secrets from the new science of expertise" },
+            { title: "Mastery", author: "Robert Greene", description: "The keys to success and long-term fulfillment" },
+            { title: "Ultralearning", author: "Scott Young", description: "Master hard skills, outsmart the competition" }
+        ],
+        progress: [
+            { title: "Continuous Delivery", author: "Jez Humble & David Farley", description: "Reliable software releases through build, test, and deployment automation" },
+            { title: "Atomic Habits", author: "James Clear", description: "An easy and proven way to build good habits and break bad ones" },
+            { title: "Accelerate", author: "Nicole Forsgren, Jez Humble & Gene Kim", description: "Building and scaling high performing technology organizations" }
+        ]
+    },
+    
+    // Learning resources by category
+    learning: {
+        technical: [
+            { name: "LeetCode", url: "https://leetcode.com/", description: "Practice coding skills with algorithmic challenges" },
+            { name: "MIT OpenCourseWare", url: "https://ocw.mit.edu/", description: "Free access to MIT course materials" },
+            { name: "freeCodeCamp", url: "https://www.freecodecamp.org/", description: "Learn to code with interactive challenges" }
+        ],
+        pattern: [
+            { name: "Refactoring Guru", url: "https://refactoring.guru/", description: "Design patterns and refactoring techniques" },
+            { name: "SourceMaking", url: "https://sourcemaking.com/", description: "Design patterns, antipatterns, and refactoring" },
+            { name: "Pattern-Oriented Software Architecture", url: "", description: "The renowned book series on architectural patterns" }
+        ],
+        challenge: [
+            { name: "HackerRank", url: "https://www.hackerrank.com/", description: "Coding challenges and competitions" },
+            { name: "Project Euler", url: "https://projecteuler.net/", description: "Mathematical and computational problems" },
+            { name: "Codewars", url: "https://www.codewars.com/", description: "Martial arts themed coding challenges" }
+        ],
+        milestone: [
+            { name: "Pluralsight", url: "https://www.pluralsight.com/", description: "Video courses with skill assessments" },
+            { name: "Exercism", url: "https://exercism.io/", description: "Code practice with mentorship" },
+            { name: "GitHub Learning Lab", url: "https://lab.github.com/", description: "Interactive courses on GitHub" }
+        ],
+        process: [
+            { name: "Coursera - Software Processes", url: "https://www.coursera.org/", description: "University courses on software methodologies" },
+            { name: "Atlassian Agile Coach", url: "https://www.atlassian.com/agile", description: "Tutorials on agile development" },
+            { name: "The Scrum Guide", url: "https://www.scrumguides.org/", description: "Official guide to Scrum methodology" }
+        ],
+        tool: [
+            { name: "Codecademy", url: "https://www.codecademy.com/", description: "Interactive coding courses" },
+            { name: "Egghead.io", url: "https://egghead.io/", description: "Concise video lessons on tools and frameworks" },
+            { name: "DevDocs", url: "https://devdocs.io/", description: "API documentation for multiple technologies" }
+        ],
+        relationship: [
+            { name: "Stack Overflow", url: "https://stackoverflow.com/", description: "Q&A community for programmers" },
+            { name: "DEV Community", url: "https://dev.to/", description: "Inclusive community for software developers" },
+            { name: "Hashnode", url: "https://hashnode.com/", description: "Developer blogging platform" }
+        ],
+        attribute: [
+            { name: "Coursera - Learning How to Learn", url: "https://www.coursera.org/learn/learning-how-to-learn", description: "Science-based learning techniques" },
+            { name: "Mindset by Carol Dweck", url: "", description: "Book on developing a growth mindset" },
+            { name: "Fast.ai", url: "https://www.fast.ai/", description: "Making neural nets uncool again" }
+        ],
+        communication: [
+            { name: "Write the Docs", url: "https://www.writethedocs.org/", description: "Community focused on documentation" },
+            { name: "Presenting.io", url: "https://presenting.io/", description: "Resources for technical presentations" },
+            { name: "Toastmasters", url: "https://www.toastmasters.org/", description: "Organization for public speaking" }
+        ],
+        resources: [
+            { name: "GitHub", url: "https://github.com/", description: "Host and review code, manage projects" },
+            { name: "GitLab", url: "https://gitlab.com/", description: "DevOps lifecycle tool" },
+            { name: "PacktPub", url: "https://www.packtpub.com/", description: "Technical books and subscription service" }
+        ],
+        security: [
+            { name: "OWASP", url: "https://owasp.org/", description: "Open Web Application Security Project" },
+            { name: "Hack The Box", url: "https://www.hackthebox.eu/", description: "Online platform for cybersecurity training" },
+            { name: "Secure Coding Guidelines", url: "https://wiki.sei.cmu.edu/confluence/display/seccode", description: "CERT secure coding standards" }
+        ],
+        scalability: [
+            { name: "High Scalability", url: "http://highscalability.com/", description: "Building bigger, faster, more reliable websites" },
+            { name: "AWS Training", url: "https://aws.amazon.com/training/", description: "Amazon Web Services cloud education" },
+            { name: "System Design Primer", url: "https://github.com/donnemartin/system-design-primer", description: "Learn how to design large-scale systems" }
+        ],
+        integration: [
+            { name: "Zapier", url: "https://zapier.com/", description: "Connect your apps and automate workflows" },
+            { name: "IFTTT", url: "https://ifttt.com/", description: "If This Then That - connect services" },
+            { name: "Postman", url: "https://www.postman.com/", description: "API development environment" }
+        ],
+        creation: [
+            { name: "Product Hunt", url: "https://www.producthunt.com/", description: "Discover new products and services" },
+            { name: "Dribbble", url: "https://dribbble.com/", description: "Design inspiration" },
+            { name: "Indie Hackers", url: "https://www.indiehackers.com/", description: "Community of indie product makers" }
+        ],
+        growth: [
+            { name: "Khan Academy", url: "https://www.khanacademy.org/", description: "Free online courses" },
+            { name: "Udemy", url: "https://www.udemy.com/", description: "Online courses on various topics" },
+            { name: "edX", url: "https://www.edx.org/", description: "Online courses from top institutions" }
+        ]
+    },
+    
+    // Programming techniques by theme
+    techniques: {
+        efficiency: [
+            "Optimize critical paths and hotspots instead of premature optimization",
+            "Master keyboard shortcuts in your IDE to boost productivity",
+            "Use static code analysis tools to identify potential performance issues"
+        ],
+        innovation: [
+            "Try the \"What If\" technique to challenge assumptions in your code",
+            "Explore alternative programming paradigms outside your comfort zone",
+            "Set aside regular time for experimental coding without specific goals"
+        ],
+        discovery: [
+            "Practice rubber duck debugging to solve complex problems",
+            "Implement a personal documentation system for insights and learnings",
+            "Rotate responsibility for exploratory testing within your team"
+        ],
+        wisdom: [
+            "Read code from established open source projects to learn best practices",
+            "Study the history and evolution of programming languages",
+            "Maintain a log of bugs you've fixed and lessons learned"
+        ],
+        success: [
+            "Build a portfolio of small, completed projects rather than many unfinished ones",
+            "Establish a personal definition of done for your coding tasks",
+            "Practice continuous delivery to get frequent feedback"
+        ],
+        introspection: [
+            "Review your own code after a cooldown period to identify improvements",
+            "Keep a coding journal to track your thought process over time",
+            "Record metrics on your productive hours to optimize your schedule"
+        ],
+        creativity: [
+            "Try solving the same problem using different programming approaches",
+            "Participate in game jams or coding competitions for creative constraints",
+            "Combine techniques from different domains into your programming work"
+        ],
+        opportunity: [
+            "Contribute to open source projects to expand your network",
+            "Create tools to automate repetitive tasks in your workflow",
+            "Explore emerging technologies by building small proof-of-concept projects"
+        ],
+        balance: [
+            "Implement Pomodoro technique for focused coding sessions",
+            "Practice test-driven development to balance quality and progress",
+            "Maintain separate environments for experimental and production code"
+        ],
+        foundation: [
+            "Master one programming language deeply before diversifying",
+            "Build projects from scratch occasionally instead of using frameworks",
+            "Implement classic data structures and algorithms by hand for deeper understanding"
+        ],
+        adaptability: [
+            "Regularly refactor working code to adapt to changing requirements",
+            "Learn multiple programming paradigms (functional, OOP, procedural)",
+            "Practice pair programming to gain exposure to different approaches"
+        ],
+        clarity: [
+            "Write code as if the next developer has your home address",
+            "Implement a personal style guide for consistent code organization",
+            "Use meaningful variable and function names that explain their purpose"
+        ],
+        protection: [
+            "Adopt the security mindset by asking \"How could this be exploited?\"",
+            "Implement defense in depth with multiple security layers",
+            "Run regular security-focused code reviews"
+        ],
+        expansion: [
+            "Design with scalability in mind from the beginning",
+            "Learn about distributed systems even for smaller projects",
+            "Implement feature flags to gradually roll out new functionality"
+        ],
+        collaboration: [
+            "Write pull request descriptions that tell a story about your changes",
+            "Practice giving constructive code reviews that focus on the code, not the person",
+            "Document design decisions and alternatives considered"
+        ],
+        mastery: [
+            "Identify and eliminate one bad coding habit each month",
+            "Implement the same solution in multiple languages to deepen understanding",
+            "Teach what you've learned to reinforce your knowledge"
+        ],
+        progress: [
+            "Set up continuous integration for even your personal projects",
+            "Track your learning progress with deliberate practice goals",
+            "Build a roadmap for skills you want to develop"
+        ]
+    },
+    
+    // Career tips by category
+    career: {
+        technical: [
+            "Specialize in a specific technology stack while maintaining broad knowledge",
+            "Create a technical blog to document your learning journey",
+            "Build a reputation as the go-to person for a particular technology"
+        ],
+        pattern: [
+            "Look for recurring patterns in successful tech careers to inform your path",
+            "Develop a consistent routine for continuous learning",
+            "Recognize anti-patterns in your career development and adjust course"
+        ],
+        challenge: [
+            "Regularly seek projects that stretch your abilities",
+            "Volunteer for difficult problems that others avoid",
+            "Set ambitious but achievable goals for technical growth"
+        ],
+        milestone: [
+            "Create a five-year career vision with specific achievements",
+            "Celebrate small wins along your development journey",
+            "Break down long-term career goals into actionable quarterly objectives"
+        ],
+        process: [
+            "Document your workflow improvements to demonstrate process optimization",
+            "Learn about project management methodologies to communicate better with management",
+            "Develop a personal system for tracking and prioritizing work"
+        ],
+        tool: [
+            "Master tools that increase your productivity and marketability",
+            "Build custom tools that showcase your problem-solving abilities",
+            "Become an early adopter of promising new technologies"
+        ],
+        relationship: [
+            "Cultivate relationships with mentors at different career stages",
+            "Build a diverse professional network across multiple industries",
+            "Contribute meaningfully to technical communities"
+        ],
+        attribute: [
+            "Identify and develop your unique strengths as a developer",
+            "Work on improving your emotional intelligence for better team collaboration",
+            "Develop adaptability as your most valuable career asset"
+        ],
+        communication: [
+            "Practice explaining technical concepts to non-technical audiences",
+            "Improve your writing skills for documentation and professional communication",
+            "Learn to communicate the business value of technical decisions"
+        ],
+        resources: [
+            "Create a personal knowledge base of solutions and resources",
+            "Build a portfolio that demonstrates your best work",
+            "Develop a system for keeping your skills current"
+        ],
+        security: [
+            "Add security expertise to your skill set as a valuable differentiator",
+            "Practice responsible disclosure if you discover vulnerabilities",
+            "Build a reputation for creating secure, robust solutions"
+        ],
+        scalability: [
+            "Gain experience with high-traffic or large-scale systems",
+            "Learn how to scale your personal impact across teams",
+            "Study how successful developers leverage their skills broadly"
+        ],
+        integration: [
+            "Position yourself at the intersection of different technologies",
+            "Develop skills that bridge technical and business concerns",
+            "Learn to integrate disparate systems and teams"
+        ],
+        creation: [
+            "Build side projects that showcase your creativity",
+            "Release open source tools to demonstrate your capabilities",
+            "Look for opportunities to initiate new projects at work"
+        ],
+        growth: [
+            "Seek regular feedback from peers and mentors",
+            "Embrace failure as a necessary part of growth",
+            "Develop a personal learning roadmap updated quarterly"
+        ]
+    }
+};
+
+// Function to generate personalized recommendations based on the cards drawn
+function generatePersonalizedRecommendations(pastCard, presentCard, futureCard) {
+    // Find enhanced card data
+    const pastEnhanced = enhancedFortuneCards.find(card => card.title === pastCard.title);
+    const presentEnhanced = enhancedFortuneCards.find(card => card.title === presentCard.title);
+    const futureEnhanced = enhancedFortuneCards.find(card => card.title === futureCard.title);
+    
+    if (!pastEnhanced || !presentEnhanced || !futureEnhanced) {
+        return generateFallbackRecommendations();
+    }
+    
+    // Get dominant theme for book recommendations
+    const dominantTheme = getDominantTheme(pastEnhanced, presentEnhanced, futureEnhanced);
+    
+    // Select a book recommendation based on the dominant theme
+    const bookRecommendations = recommendationDatabase.books[dominantTheme] || recommendationDatabase.books.adaptability;
+    const recommendedBook = bookRecommendations[Math.floor(Math.random() * bookRecommendations.length)];
+    
+    // Select learning resources based on the future card's category
+    const learningResources = recommendationDatabase.learning[futureEnhanced.category] || recommendationDatabase.learning.growth;
+    const recommendedResource = learningResources[Math.floor(Math.random() * learningResources.length)];
+    
+    // Select programming techniques based on the present card's theme
+    const programmingTechniques = recommendationDatabase.techniques[presentEnhanced.theme] || recommendationDatabase.techniques.adaptability;
+    const recommendedTechnique = programmingTechniques[Math.floor(Math.random() * programmingTechniques.length)];
+    
+    // Select career tips based on future card's category
+    const careerTips = recommendationDatabase.career[futureEnhanced.category] || recommendationDatabase.career.growth;
+    const recommendedCareerTip = careerTips[Math.floor(Math.random() * careerTips.length)];
+    
+    // Build the personalized recommendations
+    return `
+        <div class="recommendations-section">
+            <h3>📚 Some recs:</h3>
+            
+            <div class="recommendation-item">
+                <h4>Book Recommendation:</h4>
+                <p><strong>${recommendedBook.title}</strong> by ${recommendedBook.author}</p>
+                <p class="recommendation-description">${recommendedBook.description}</p>
+            </div>
+            
+            <div class="recommendation-item">
+                <h4>Learning Resource:</h4>
+                <p><strong>${recommendedResource.name}</strong></p>
+                <p class="recommendation-description">${recommendedResource.description}</p>
+                ${recommendedResource.url ? `<p class="recommendation-link">Check it out: <a href="${recommendedResource.url}" target="_blank">${recommendedResource.url}</a></p>` : ''}
+            </div>
+            
+            <div class="recommendation-item">
+                <h4>Programming Technique:</h4>
+                <p>${recommendedTechnique}</p>
+            </div>
+            
+            <div class="recommendation-item">
+                <h4>Career Tip:</h4>
+                <p>${recommendedCareerTip}</p>
+            </div>
+        </div>
+    `;
+}
+
+// Fallback recommendations if card data is missing
+function generateFallbackRecommendations() {
+    return `
+        <div class="recommendations-section">
+            <h3>📚 Personalized Recommendations</h3>
+            
+            <div class="recommendation-item">
+                <h4>Book Recommendation:</h4>
+                <p><strong>The Pragmatic Programmer</strong> by Andrew Hunt & David Thomas</p>
+                <p class="recommendation-description">From journeyman to master - timeless advice for software developers.</p>
+            </div>
+            
+            <div class="recommendation-item">
+                <h4>Learning Resource:</h4>
+                <p><strong>freeCodeCamp</strong></p>
+                <p class="recommendation-description">Learn to code with interactive challenges and earn certifications.</p>
+                <p class="recommendation-link">Check it out: <a href="https://www.freecodecamp.org/" target="_blank">https://www.freecodecamp.org/</a></p>
+            </div>
+            
+            <div class="recommendation-item">
+                <h4>Programming Technique:</h4>
+                <p>Practice code reviews with yourself by revisiting code after a cooldown period.</p>
+            </div>
+            
+            <div class="recommendation-item">
+                <h4>Career Tip:</h4>
+                <p>Build a portfolio of projects that demonstrate your skills and problem-solving abilities.</p>
+            </div>
+        </div>
+    `;
+}
+
+// Add styles for recommendations
+const recommendationsStyle = `
+<style>
+    .recommendations-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .recommendations-section h3 {
+        color: var(--secondary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .recommendation-item {
+        margin-bottom: 1.2rem;
+        padding: 0.8rem;
+        background: rgba(106, 90, 205, 0.1);
+        border-radius: 8px;
+        border-left: 3px solid var(--secondary-color);
+    }
+    
+    .recommendation-item h4 {
+        color: var(--secondary-color);
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+    }
+    
+    .recommendation-description {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin: 0.3rem 0;
+    }
+    
+    .recommendation-link {
+        font-size: 0.8rem;
+        margin: 0.3rem 0 0 0;
+    }
+    
+    .recommendation-link a {
+        color: var(--secondary-color);
+        text-decoration: none;
+    }
+    
+    .recommendation-link a:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 600px) {
+        .recommendation-item {
+            padding: 0.6rem;
+        }
+        
+        .recommendation-item h4 {
+            font-size: 0.9rem;
+        }
+        
+        .recommendation-description {
+            font-size: 0.8rem;
+        }
+        
+        .recommendation-link {
+            font-size: 0.7rem;
+        }
+    }
+</style>
+`;
+
+    // Insert the styles at the end of the head
+    document.head.insertAdjacentHTML('beforeend', recommendationsStyle);
 
     // Event Listeners
     document.getElementById('resetButton').addEventListener('click', () => {
